@@ -1,0 +1,29 @@
+{
+  "name": "my-twitch-bot",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "axios": "^0.19.2",
+    "dotenv": "^8.2.0",
+    "express": "^4.17.1",
+    "fs-extra": "^9.0.0",
+    "howler": "^2.2.0",
+    "mongoose": "^5.9.16",
+    "obs-websocket-js": "^4.0.1",
+    "passport": "^0.4.1",
+    "passport-twitch": "^1.0.3",
+    "say": "^0.16.0",
+    "twitch": "^4.0.10",
+    "twitch-chat-client": "^4.0.10",
+    "twitch-pubsub-client": "^4.0.10",
+    "twitch-webhooks": "^4.0.10"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js -r dotenv/config",
+    "test": "test"
+  },
+  "author": "",
+  "license": "ISC"
+}
