@@ -1,4 +1,15 @@
-./node_modules
-/node_modules
+.idea/
+.vscode/
+node_modules/
+build/
+config/
+controller/
+docker/
+services/
+tmp/
+temp/
 .env
+index.js
+index.ts
 token.json
+streamlabs.json
