@@ -1,13 +1,4 @@
 .vscode
-build
-config
-controller
-docker
 node_modules
-resources
-services
-sounds
-index.js
-index.ts
-streamlabs.json
-token.json
+build
+dist

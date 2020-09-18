@@ -1,0 +1,94 @@
+* {
+  font-family: 'Teko', Arial, Helvetica, sans-serif;
+  padding: 0px;
+  margin: 0px;
+}
+
+html {
+  /*background-color: gray;*/
+}
+
+@keyframes niconicoMovement {
+  0% {
+    transform: translateX(100vw);
+  }
+  100% {
+    transform: translateX(-100vw);
+  }
+}
+
+@keyframes textFadeIn {
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@keyframes textFadeOut {
+  0% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* #messages {
+  width: 100vw;
+  height: 100vh;
+  margin: 0;
+  padding: 0;
+} */
+
+.message {
+  position: absolute;
+  white-space: nowrap;
+  font-size: 32px;
+  color: white;
+}
+
+.messageUsername {
+  float: left;
+}
+
+.messageContent {
+  float: left;
+}
+
+.messageMovement0 {
+  animation: 10s linear 0s 1 niconicoMovement;
+  animation-fill-mode: forwards;
+  -webkit-animation-fill-mode: forwards;
+}
+
+.messageMovement1 {
+  animation: 15s linear 0s 1 niconicoMovement;
+  animation-fill-mode: forwards;
+  -webkit-animation-fill-mode: forwards;
+}
+
+.messageMovement2 {
+  animation: 20s linear 0s 1 niconicoMovement;
+  animation-fill-mode: forwards;
+  -webkit-animation-fill-mode: forwards;
+}
+
+.messageMovement3 {
+  animation: 25s linear 0s 1 niconicoMovement;
+  animation-fill-mode: forwards;
+  -webkit-animation-fill-mode: forwards;
+}
+
+.textFadeIn {
+  animation: 0.2s ease-in 0.25s 1 textFadeIn;
+  animation-fill-mode: forwards;
+  -webkit-animation-fill-mode: forwards;
+}
+
+.textFadeOut {
+  animation: 0.2s ease-in 0s 1 textFadeOut;
+  animation-fill-mode: forwards;
+  -webkit-animation-fill-mode: forwards;
+}

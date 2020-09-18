@@ -1,8 +1,8 @@
-FROM node:current-alpine
+FROM node:14.8.0-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --silent
+RUN npm ci
 COPY ./ ./
-RUN npx tsc -b
+RUN npx tsc
 EXPOSE 3000
-CMD ["node","build/src/index.js"]
+CMD ["node","dist/index.js"]

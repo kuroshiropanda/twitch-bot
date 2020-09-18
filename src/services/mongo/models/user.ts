@@ -4,6 +4,7 @@ const userSchema = new mongoose.Schema({
     twitchId: Number,
     username: String,
     name: String,
+    email: String,
     token: String,
     refreshToken: String,
     expiry: Number

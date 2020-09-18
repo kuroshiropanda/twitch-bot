@@ -1,10 +1,11 @@
 import axios from 'axios'
 
-import { twitch, scopes } from '../../config/twitch'
+import { twitch } from '../../config/twitch'
+import { User } from '../mongo/mongo'
 
 export default class Twitch {
     static async getToken(code: any) {
-        let data: object = {}
+        let data: Array<object> = []
         try {
             const token = await axios({
                 method: 'POST',
@@ -18,8 +19,6 @@ export default class Twitch {
                 }
             })
 
-            data['token'] = token.data
-
             const user = await axios({
                 method: 'GET',
                 url: 'https://api.twitch.tv/helix/users',
@@ -29,7 +28,7 @@ export default class Twitch {
                 }
             })
 
-            data['user'] = user.data.data[0]
+            data.push(token.data, user.data.data[0])
         } catch (err) {
             return err
         }
@@ -44,49 +43,83 @@ export default class Twitch {
                 client_id: twitch.clientId,
                 client_secret: twitch.clientSecret,
                 grant_type: 'client_credentials',
-                scope: scopes.join(' ')
+                scope: twitch.scopes.join(' ')
             }
         })
 
-        return appToken
+        return appToken.data.access_token
+    }
+
+    static async getUsers() {
+        return (await User.readAll()).map((user: any) => user.username)
+    }
+
+    static async updateStream(id: string, token: string, title: string) {
+        const res = await axios({
+            method: 'PATCH',
+            url: 'https://api.twitch.tv/helix/channels',
+            headers: {
+                'client-id': twitch.clientId,
+                Authorization: `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            },
+            data: {
+                broadcaster_id: id,
+                title: title
+            }
+        })
+
+        console.log(res.status)
+    }
+
+    static async getUserId(user: string) {
+        try {
+            const userId = await axios({
+                method: 'GET',
+                url: 'https://api.twitch.tv/helix/users',
+                headers: {
+                    'client-id': twitch.clientId,
+                    Authorization: `Bearer ${await Twitch.getAppToken()}`
+                },
+                params: {
+                    login: user
+                }
+            })
+            
+            return userId.data
+        } catch (err) {
+            console.log(err.response)
+
+            return false
+        }
+    }
+
+    static async getRandomClip(id: string) {
+        try {
+            const clips = await axios({
+                url: 'https://api.twitch.tv/helix/clips',
+                method: 'GET',
+                headers: {
+                    'client-id': twitch.clientId,
+                    Authorization: `Bearer ${await Twitch.getAppToken()}`
+                },
+                params: {
+                    broadcaster_id: id
+                }
+            })
+
+            return clips.data.data.map((clip: any) => {
+                const AT = /AT-cm%7C/g
+                if (AT.test(clip.thumbnail_url)) {
+                    return `${clip.thumbnail_url.replace('-preview-480x272.jpg', '-480.mp4')}`
+                } else {
+                    return `${clip.thumbnail_url.replace('twitch.tv/', 'twitch.tv/AT-cm%7C').replace('-preview-480x272.jpg', '-480.mp4')}`
+                }
+            })
+        } catch (err) {
+            console.log(err)
+
+            return false
+        }
     }
 }
-
-// axios({
-//     method: 'POST',
-//     url: `https://id.twitch.tv/oauth2/token`,
-//     params: {
-//         client_id: twitch.clientId,
-//         client_secret: twitch.clientSecret,
-//         code: req.query.code,
-//         grant_type: 'authorization_code',
-//         redirect_uri: twitch.redirectURI
-//     }
-// }).then((res) => {
-//     console.log(res.data)
-
-//     axios({
-//         method: 'GET',
-//         url: 'https://api.twitch.tv/helix/users',
-//         headers: {
-//             'Client-ID': twitch.clientId,
-//             'Authorization': `Bearer ${res.data.access_token}`
-//         }
-//     }).then((res) => {
-//         console.log(res.data)
-//     })
-//     // const accessToken = res.data.access_token;
-//     // const refreshToken = res.data.refresh_token;
-//     // const expiryDate = res.data.expires_in;
-//     // const newTokenData = {
-//     //     accessToken,
-//     //     refreshToken,
-//     //     expiryTimestamp: expiryDate
-//     // };
-
-//     // db.create({
-
-//     // })
-// }).catch((e) => {
-//     console.error(e.message)
-// })
