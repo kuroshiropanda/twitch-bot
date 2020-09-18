@@ -1,5 +1,3 @@
-import { protocol } from "socket.io-client"
-
 declare let process: {
     env: {
         OBS_ADDRESS: string,
@@ -8,8 +6,8 @@ declare let process: {
 }
 
 interface obsObj {
-    address: string;
-    password: string;
+    address: string
+    password: string
 }
 
 export const OBS: obsObj = {
