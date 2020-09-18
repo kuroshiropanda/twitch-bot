@@ -4,16 +4,12 @@ A custom twitch bot to automate most interactions on kuroshiropanda's twitch cha
 
 ## To do
 
-+ Command Handler
-+ A page maybe for signup
-+ A better readme
-+ changelogs
-+ ...
+See [TODO.md](TODO.md)
 
 ## Installation
 
 ```bash
-git clone https://github.com/kuroshiropanda/kuroshiropanda-twitch-bot.git
+git clone https://github.com/kuroshiropanda/twitch-bot.git
 npm install
 npm start
 ```
