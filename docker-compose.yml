@@ -1,21 +1,13 @@
 version: "3.8"
 
 services:
-  bot:
-    container_name: bot
-    image: node:latest
-    # init: true
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    working_dir: /app
+  twitch-bot:
+    container_name: kuro
+    init: true
+    build: ./
     ports:
       - "3000:3000"
-    volumes:
-      - ./:/app
-    restart: unless-stopped
-    # command: tsc -b
-    # entrypoint: node build/src/index.js
+    restart: on-failure
   # mongo:
   #   container_name: mongodb
   #   image: mongo:latest
