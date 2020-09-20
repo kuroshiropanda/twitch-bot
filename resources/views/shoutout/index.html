@@ -6,48 +6,18 @@
 			name="viewport"
 			content="width=device-width, height=device-height, initial-scale=1.0"
 		/>
-		<style>
-			body {
-				padding: 0;
-				margin: 0;
-			}
-			#clip {
-				width: 100%;
-				height: auto;
-				padding: 0;
-				margin: 0;
-			}
-		</style>
+		<link rel="dns-prefetch" href="https://clips-media-assets2.twitch.tv" />
+		<link rel="dns-prefetch" href="https://static-cdn.jtvnw.net/" />
+		<link rel="preconnect" href="https://clips-media-assets2.twitch.tv" />
+		<link rel="preconnect" href="https://static-cdn.jtvnw.net/" />
+		<link rel="stylesheet" href="index.css" />
 	</head>
 	<body>
-		<video id="clip" onended="removeVideo()"></video>
+		<div id="shoutout">
+			<span id="username"></span>
+			<video id="clip" onended="checkQueue()"></video>
+		</div>
 		<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/2.3.0/socket.io.js"></script>
-		<script>
-			const socket = io('http://localhost:8000');
-			socket.connect();
-			
-			socket.on('connect', () => console.log('socketio: connected'));
-      
-      var player = document.getElementById('clip');
-			player.volume = 0.5;
-
-			socket.on('ClipShoutout', (data) => {
-				console.log(data);
-				player.style.display = 'block';
-				const num = randNum(data.length - 1);
-				console.log(num);
-        player.src = data[num];
-        player.play();
-			});
-			
-			function randNum(max) {
-				return Math.floor(Math.random() * Math.floor(max));
-			}
-      
-      function removeVideo() {
-        player.style.display = 'none';
-        player.src = '';
-      }
-		</script>
+		<script src="index.js"></script>
 	</body>
 </html>
