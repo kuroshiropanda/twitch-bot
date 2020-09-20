@@ -47,6 +47,14 @@ html {
   white-space: nowrap;
   font-size: 32px;
   color: white;
+  vertical-align: middle;
+}
+
+.emotes {
+  display: inline-block;
+  height: 1em;
+  width: auto;
+  vertical-align: middle;
 }
 
 .messageUsername {
