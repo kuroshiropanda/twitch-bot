@@ -24,7 +24,7 @@ import { mongo } from '../../config/mongo'
 
 export class Bot {
     static async create(data: any) {
-        await BotModel.findOneAndUpdate({ twitchId: '74955654' },
+        await BotModel.findOneAndUpdate({ twitchId: data[1].id },
             {
                 username: data[1].login,
                 name: data[1].display_name,
@@ -36,7 +36,7 @@ export class Bot {
     }
 
     static async read(data: any) {
-        const bot = await BotModel.findOne({ twitchId: data.twitchId }).exec()
+        const bot = await BotModel.findOne({ username: data.username }).exec()
         return bot
     }
 
@@ -77,7 +77,7 @@ export class User {
     }
 
     static async update(data: any) {
-        await UserModel.findOneAndUpdate({ username: data.username }, {
+        await UserModel.findOneAndUpdate({ twitchId: data.twitchId }, {
             token: data.accessToken,
             refreshToken: data.refreshToken,
             expiry: data.expiryDate
