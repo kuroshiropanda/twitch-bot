@@ -1,17 +1,19 @@
 import OBSWebSocket from 'obs-websocket-js'
-import { OBS } from '../../config/obs'
+
+import { Event, Events } from '../events'
+import { obs } from '../../config'
 import Streamlabs from '../streamlabs/streamlabs'
+import { onRedeemEvent } from '../../models'
+import { Rewards } from '../pubsub/rewards'
 
-export default class obsWS {
+export default class obsController {
 
-    private obs: any
+    private obs: OBSWebSocket
     private currentScene: string
     private stopStream: any
 
     constructor() {
         this.obs = new OBSWebSocket()
-        this.currentScene = ''
-        this.stopStream
     }
 
     get scene() {
@@ -33,26 +35,33 @@ export default class obsWS {
     async connect() {
         try {
             await this.obs.connect({
-                address: OBS.address,
-                password: OBS.password
+                address: obs.address,
+                password: obs.password
             })
             console.log('OBSWEBSocket: connected')
         } catch (err) {
             console.log(err)
         }
 
-        this.obs.on('SwitchScenes', (data: any) => {
-            if (data.sceneName === 'outro') {
-                Streamlabs.credits()
-            }
-        })
+        this.obs.on('SwitchScenes', (data: any) => this.onStreamEnd(data.sceneName))
 
-        this.obs.on('error', (err: any) => {
-            throw err
-        })
+        Event.addListener(Events.onChannelRedeem, (onRedeem: onRedeemEvent) => this.onRedeem(onRedeem))
     }
 
-    async tbc() {
+    private onStreamEnd(scene: string) {
+        if (scene === 'outro') {
+            Streamlabs.credits()
+        }
+    }
+
+    private onRedeem(onRedeem: onRedeemEvent) {
+        if (onRedeem.reward.rewardId === Rewards.toBeContinued) this.tbc()
+        if (onRedeem.reward.rewardId === Rewards.silence) this.silence()
+        if (onRedeem.reward.rewardId === Rewards.stopStream) this.stop()
+        if (onRedeem.reward.rewardId === Rewards.cancelStop) this.stopCancel()
+    }
+
+    tbc() {
         this.obs.send('GetCurrentScene').then(data => {
             this.obs.send('SetCurrentScene', {
                 'scene-name': 'freeze frame'
@@ -94,7 +103,7 @@ export default class obsWS {
         })
     }
 
-    async silence() {
+    silence() {
         this.obs.send('ToggleMute', {
             source: 'mic'
         })
@@ -106,29 +115,26 @@ export default class obsWS {
         }, 30000)
     }
 
-    async stop() {
+    stop() {
         this.obs.send('GetCurrentScene').then((data: any) => {
             this.scene = data.name
-        })
+        }).catch((e) => console.log(e))
 
         this.obs.send('SetCurrentScene', {
             'scene-name': 'outro'
-        })
-
-        // Streamlabs.credits()
+        }).catch((e) => console.log(e))
 
         this.timeout = setTimeout(() => {
-            this.obs.send('StopStreaming')
+            this.obs.send('StopStreaming').catch((e) => console.log(e))
         }, 120 * 1000)
     }
 
-    async stopCancel() {
+    stopCancel() {
         this.obs.send('SetCurrentScene', {
             'scene-name': this.scene ? this.scene : 'main display'
-        }).catch((e: any) => {
-            console.log(e)
-        })
+        }).catch((e) => console.log(e))
 
         clearTimeout(this.timeout)
+        console.log(this.timeout)
     }
 }
