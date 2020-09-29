@@ -1,5 +1,6 @@
 declare let process: {
     env: {
+        CHANNEL: string,
         TWITCH_CLIENT_ID: string,
         TWITCH_CLIENT_SECRET: string,
         TWITCH_CALLBACK_URI: string
@@ -7,6 +8,7 @@ declare let process: {
 }
 
 interface clientObj {
+    channel: string
     clientId: string
     clientSecret: string
     redirectURI: string
@@ -14,6 +16,7 @@ interface clientObj {
 }
 
 export const twitch: clientObj = {
+    channel: process.env.CHANNEL,
     clientId: process.env.TWITCH_CLIENT_ID,
     clientSecret: process.env.TWITCH_CLIENT_SECRET,
     redirectURI: process.env.TWITCH_CALLBACK_URI,

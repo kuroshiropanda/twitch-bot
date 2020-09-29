@@ -10,7 +10,7 @@ interface obsObj {
     password: string
 }
 
-export const OBS: obsObj = {
+export const obs: obsObj = {
     address: process.env.OBS_ADDRESS,
     password: process.env.OBS_PASSWORD
 }
