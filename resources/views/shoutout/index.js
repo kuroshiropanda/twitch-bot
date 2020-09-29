@@ -1,6 +1,6 @@
 'use strict';
 
-const socket = io('http://localhost:8000');
+const socket = io.connect('/');
 socket.connect();
 
 socket.on('connect', () => console.log('socketio: connected'));
@@ -13,7 +13,7 @@ player.autoplay = true;
 
 let clips = [];
 
-socket.on('ClipShoutout', (data) => {
+socket.on('onShoutout', (data) => {
   console.log(data);
   shoutout.style.display = 'block';
   const num = randNum(data.clips.length - 1);

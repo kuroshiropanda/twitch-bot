@@ -1,4 +1,4 @@
-const socket = io('http://localhost:8000')
+const socket = io.connect('/')
 socket.connect()
 
 let messagesArray = []
@@ -6,7 +6,7 @@ let maxMovementNums = 3
 
 const messagesDiv = document.getElementById('messages')
 
-socket.on('NicoNicoChat', (data) => {
+socket.on('onChat', (data) => {
   console.log(data)
   let emotes = data.emotes
   let text = data.message
