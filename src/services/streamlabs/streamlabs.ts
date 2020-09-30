@@ -1,21 +1,28 @@
 import axios from 'axios'
-import io from 'socket.io-client'
+import * as SocketIOClientStatic from 'socket.io-client'
 import { promises as fs } from 'fs'
-import { streamlabs } from '../../config/streamlabs'
+
+import { streamlabs } from '../../config'
+
+import { Event, Events } from '../events'
 
 export default class Streamlabs {
 
-    private socket: string
+    private streamlabs: SocketIOClientStatic
 
-    constructor(socket: string) {
-        this.socket = socket
+    constructor(token: string) {
+        this.streamlabs = io(`https://sockets.streamlabs.com`, {
+            transports: ['websocket'],
+            query: {
+                token: token
+            }
+        })
     }
 
     async init() {
-        return io(`https://sockets.streamlabs.com`, {
-            transports: ['websocket'],
-            query: {
-                token: await Streamlabs.token()
+        this.streamlabs.on('event', (data) => {
+            if (data.type === 'donation') {
+                Event.emit(Events.onDonate, new onDonateEvent())
             }
         })
     }
@@ -51,7 +58,7 @@ export default class Streamlabs {
                 access_token: await this.token()
             })
         } catch (err) {
-            throw err.data.message
+            console.error(err.response)
         }
     }
 
@@ -64,7 +71,7 @@ export default class Streamlabs {
                 duration: '8000'
             })
         } catch (err) {
-            throw err.data.message
+            console.error(err.response)
         }
     }
 
@@ -76,7 +83,7 @@ export default class Streamlabs {
                 platform: 'twitch'
             })
         } catch (err) {
-            throw err.data.message
+            console.error(err.response)
         }
     }
 }
