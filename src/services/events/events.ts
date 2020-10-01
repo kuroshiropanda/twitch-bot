@@ -1,14 +1,13 @@
 export enum Events {
   onChat = 'onChat',
-  onCommand = 'onCommand',
-  onCreditRoll = 'onCreditRoll',
-  onDonate = 'onDonate',
-  onChannelRedeem = 'onChannelRedeem',
-  onSub = 'onSub',
-  onCheer = 'onCheer',
   onRaid = 'onRaid',
   onHost = 'onHost',
-  onShoutout = 'onShoutout',
+  onSub = 'onSub',
   onBits = 'onBits',
+  onDonate = 'onDonate',
+  onShoutout = 'onShoutout',
+  onChannelRedeem = 'onChannelRedeem',
+  onCommand = 'onCommand',
+  onOutro = 'onOutro',
   toSay = 'toSay'
 }

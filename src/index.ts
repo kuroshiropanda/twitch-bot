@@ -71,30 +71,24 @@ import { EventHandler } from './services/events'
         console.error(err)
     }
 
+    if (user.streamlabs) {
+      const streamlabs = new Streamlabs(user.streamlabs.token, user.streamlabs.socketToken)
+
+      try {
+        await streamlabs.init()
+      } catch (err) {
+        console.error(err)
+      }
+    }
     
     const port: number = 3000
-
-    const botScopes = [
-        'channel:moderate',
-        'chat:edit',
-        'chat:read',
-        'whispers:read',
-        'whispers:edit',
-        'channel:edit:commercial',
-        // 'channel:read:hype_train',
-        // 'channel:read:subscriptions',
-        'clips:edit',
-        // 'user:edit',
-        'channel_commercial',
-        'channel_editor',
-    ]
 
     app.use('/', express.static('resources/views/index'))
     app.use('/clips', express.static('resources/views/clips'))
     app.use('/so', express.static('resources/views/shoutout'))
     app.use('/niconico', express.static('resources/views/niconico'))
     app.get('/bot/login', (req, res) => {
-        res.redirect(`https://id.twitch.tv/oauth2/authorize?client_id=${twitch.clientId}&redirect_uri=${twitch.redirectURI}&response_type=code&scope=${botScopes.join(' ')}&force_verify=true`)
+        res.redirect(`https://id.twitch.tv/oauth2/authorize?client_id=${twitch.clientId}&redirect_uri=${twitch.redirectURI}&response_type=code&scope=${twitch.botScopes.join(' ')}&force_verify=true`)
     })
     app.get('/login', (req, res) => {
         res.redirect(`https://id.twitch.tv/oauth2/authorize?client_id=${twitch.clientId}&redirect_uri=${twitch.redirectURI}&response_type=code&scope=${twitch.scopes.join(' ')}&force_verify=true`)
@@ -110,10 +104,16 @@ import { EventHandler } from './services/events'
         } else {
             User.create(data)
         }
-        res.send(data)
+        res.redirect('/streamlabs')
     })
     app.get('/streamlabs/callback', async (req, res) => {
         const data = await Streamlabs.getToken(req.query.code)
+        User.addStreamlabs({
+          twitchId: user.twitchId,
+          token: data[0].access_token,
+          refresh_token: data[0].refresh_token,
+          socket_token: data[1].socket_token
+        })
         res.json(data)
     })
     app.get('/channels', async (req, res) => {
