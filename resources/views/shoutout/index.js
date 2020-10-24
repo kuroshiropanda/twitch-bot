@@ -1,7 +1,6 @@
 'use strict';
 
-const socket = io.connect('/');
-socket.connect();
+const socket = io();
 
 socket.on('connect', () => console.log('socketio: connected'));
 

@@ -1,5 +1,4 @@
-const socket = io.connect('/')
-socket.connect()
+const socket = io()
 
 let messagesArray = []
 let maxMovementNums = 3
