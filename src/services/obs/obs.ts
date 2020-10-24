@@ -1,9 +1,10 @@
 import OBSWebSocket from 'obs-websocket-js'
 
+import { obs, twitch } from '../../config'
+import { onRedeemEvent, onBRBEvent, onOutroEvent } from '../../models'
+import { Rewards } from '../pubsub'
 import { Event, Events } from '../events'
-import { obs } from '../../config'
-import { onRedeemEvent, onOutroEvent } from '../../models'
-import { Rewards } from '../pubsub/rewards'
+import { Scenes } from './scenes'
 
 export default class obsController {
 
@@ -15,19 +16,19 @@ export default class obsController {
     this.obs = new OBSWebSocket()
   }
 
-  get scene() {
+  private get scene() {
     return this.currentScene
   }
 
-  set scene(scene: string) {
+  private set scene(scene: string) {
     this.currentScene = scene
   }
 
-  get timeout() {
+  private get timeout() {
     return this.stopStream
   }
 
-  set timeout(x: any) {
+  private set timeout(x: any) {
     this.stopStream = x
   }
 
@@ -47,97 +48,156 @@ export default class obsController {
     Event.addListener(Events.onChannelRedeem, (onRedeem: onRedeemEvent) => this.onRedeem(onRedeem))
   }
 
-  private emit(event: Events, payload: any) {
+  private emit(event: Events, payload?: any) {
     Event.emit(event, payload)
   }
 
-  private onChangeScene(scene: string) {
-    if (scene === 'outro') {
-      this.emit(Events.onOutro, new onOutroEvent(true))
+  private async onChangeScene(scene: string) {
+    switch(scene) {
+      case Scenes.outro:
+        this.emit(Events.onOutro, new onOutroEvent(true))
+        break
+      case Scenes.brb:
+        this.mute()
+        break
+      default:
+        this.unmute()
+        break
     }
   }
 
   private onRedeem(onRedeem: onRedeemEvent) {
-    if (onRedeem.reward.rewardId === Rewards.toBeContinued) this.tbc()
-    if (onRedeem.reward.rewardId === Rewards.silence) this.silence()
-    if (onRedeem.reward.rewardId === Rewards.stopStream) this.stop()
-    if (onRedeem.reward.rewardId === Rewards.cancelStop) this.stopCancel()
+    switch(onRedeem.reward.rewardId) {
+      case Rewards.toBeContinued:
+        this.tbc()
+        break
+      case Rewards.silence:
+        this.silence()
+        break
+      case Rewards.stopStream:
+        this.stop()
+        break
+      case Rewards.cancelStop:
+        this.stopCancel()
+        break
+      default:
+        break
+    }
   }
 
-  tbc() {
-    this.obs.send('GetCurrentScene').then(data => {
-      this.obs.send('SetCurrentScene', {
-        'scene-name': 'freeze frame'
-      })
-
-      setTimeout(() => {
-        this.obs.send('SetSourceFilterVisibility', {
-          sourceName: 'IRL',
-          filterName: 'Freeze',
-          filterEnabled: true
-        })
-
-        this.obs.send('SetSourceFilterVisibility', {
-          sourceName: 'IRL',
-          filterName: 'Vintage',
-          filterEnabled: true
-        })
-      }, 3800)
-
-      setTimeout(() => {
-        this.obs.send('SetCurrentScene', {
-          'scene-name': data.name
-        })
-      }, 12000)
-
-      setTimeout(() => {
-        this.obs.send('SetSourceFilterVisibility', {
-          sourceName: 'IRL',
-          filterName: 'Freeze',
-          filterEnabled: false
-        })
-
-        this.obs.send('SetSourceFilterVisibility', {
-          sourceName: 'IRL',
-          filterName: 'Vintage',
-          filterEnabled: false
-        })
-      }, 13000)
-    })
-  }
-
-  silence() {
-    this.obs.send('ToggleMute', {
-      source: 'mic'
-    })
+  private async tbc() {
+    const scene = await this.getCurrentScene()
+    this.setCurrentScene(Scenes.freeze)
 
     setTimeout(() => {
-      this.obs.send('ToggleMute', {
-        source: 'mic'
-      })
+      this.freezeVintage(true)
+    }, 3800)
+
+    setTimeout(() => {
+      this.setCurrentScene(scene)
+    }, 12000)
+
+    setTimeout(() => {
+      this.freezeVintage(false)
+    }, 13000)
+  }
+
+  private async silence() {
+    await this.setMute('mic', true)
+
+    setTimeout(async () => {
+      await this.setMute('mic', false)
     }, 30000)
   }
 
-  stop() {
-    this.obs.send('GetCurrentScene').then((data: any) => {
-      this.scene = data.name
-    }).catch((e) => console.log(e))
+  private async stop() {
+    try {
+      const scene = await this.getCurrentScene()
+      this.scene = scene
 
-    this.obs.send('SetCurrentScene', {
-      'scene-name': 'outro'
-    }).catch((e) => console.log(e))
+      await this.setCurrentScene(Scenes.outro)
+    } catch (err) {
+      console.error(err)
+    }
 
-    this.timeout = setTimeout(() => {
-      this.obs.send('StopStreaming').catch((e) => console.log(e))
+    this.timeout = setTimeout(async () => {
+      await this.obs.send('StopStreaming')
     }, 120 * 1000)
   }
 
-  stopCancel() {
+  private stopCancel() {
     this.obs.send('SetCurrentScene', {
       'scene-name': this.scene ? this.scene : 'main display'
     }).catch((e) => console.log(e))
 
     clearTimeout(this.timeout)
     console.log(this.timeout)
+  }
+
+  private async mute() {
+    this.setMute('earphones', true)
+    this.setMute('mic', true)
+  }
+
+  private async unmute() {
+    this.setMute('earphones', false)
+    this.setMute('mic', false)
+  }
+
+  private async getCurrentScene() {
+    try {
+      const scene = await this.obs.send('GetCurrentScene')
+      return scene.name
+    } catch (err) {
+      console.error(err)
+      return undefined
+    }
+  }
+
+  private async setCurrentScene(scene: string) {
+    try {
+      await this.obs.send('SetCurrentScene', {
+        'scene-name': scene
+      })
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  private async freezeVintage(bool: boolean) {
+    try {
+      this.obs.send('SetSourceFilterVisibility', {
+        sourceName: 'IRL',
+        filterName: 'Freeze',
+        filterEnabled: bool
+      })
+
+      this.obs.send('SetSourceFilterVisibility', {
+        sourceName: 'IRL',
+        filterName: 'Vintage',
+        filterEnabled: bool
+      })
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  private async getMute(source: string) {
+    const mute = await this.obs.send('GetMute', {
+      source: source
+    })
+
+    return mute.muted
+  }
+
+  private async setMute(source: string, bool: boolean) {
+    try {
+      await this.obs.send('SetMute', {
+        source: source,
+        mute: bool
+      })
+    } catch (err) {
+      console.error(err)
+    }
   }
 }
