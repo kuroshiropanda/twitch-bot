@@ -1,22 +1,38 @@
-import api from './services/api'
+import { api } from './services/api'
 
 import { onShoutoutEvent, toSayEvent } from './models'
 import { Event, Events } from './services/events'
 
+const getClips = async (name: string, limit: number = 50, cursor?: string) => {
+  try {
+    const user = await api.kraken.users.getUserByName(name)
+    const clips = await api.helix.clips.getClipsForBroadcaster(user.id, {
+      limit: limit
+    })
+
+    return clips.data
+  } catch (err) {
+    console.error(err)
+    return undefined
+  }
+}
+
+const thumbnailToUrl = (url: string, res: string) => {
+  const AT = /AT-cm%7C/g
+  if (AT.test(url)) {
+    return `${url.replace('-preview-480x272.jpg', `-${res}.mp4`)}`
+  } else {
+    return `${url.replace('twitch.tv/', 'twitch.tv/AT-cm%7C').replace('-preview-480x272.jpg', `-${res}.mp4`)}`
+  }
+}
+
 const shoutout = async (user: string) => {
   try {
-    const userId = await api.kraken.users.getUserByName(user)
-    const clips = await api.helix.clips.getClipsForBroadcaster(userId.id, {
-      limit: 50
-    })
-    
-    const clipsArray = clips.data.map(clip => {
-      const AT = /AT-cm%7C/g
-      if (AT.test(clip.thumbnailUrl)) {
-        return `${clip.thumbnailUrl.replace('-preview-480x272.jpg', '-360.mp4')}`
-      } else {
-        return `${clip.thumbnailUrl.replace('twitch.tv/', 'twitch.tv/AT-cm%7C').replace('-preview-480x272.jpg', '-360.mp4')}`
-      }
+    const channel = user.replace('@', '')
+    const clips = await getClips(channel)
+
+    const clipsArray = clips.map((clip) => {
+      return thumbnailToUrl(clip.thumbnailUrl, '360')
     })
 
     if (clipsArray.length > 0) {
@@ -29,6 +45,39 @@ const shoutout = async (user: string) => {
   }
 }
 
+const BRB = async (user: any, cursor: string) => {
+  try {
+    const clips = await getClips(user, 100, cursor)
+    let clipArr: object[]
+
+    for (let clip of clips) {
+      clipArr.push({
+        title: clip.title,
+        clip: thumbnailToUrl(clip.thumbnailUrl, '360')
+      })
+    }
+
+    return clipArr
+  } catch (err) {
+    return err
+  }
+}
+
 const dance = (multiplier: number = 1) => Math.random() < (0.25 * multiplier)
 
-export { shoutout, dance }
+const whatGame = async (channel: string) => {
+  const user = await api.kraken.channels.getChannel(channel)
+  return user.game
+}
+
+const getUserPicture = async (user: string) => {
+  const data = await api.helix.users.getUserByName(user)
+  return data.profilePictureUrl
+}
+
+const getChatInfo = async (user: string) => {
+  const data = await api.kraken.users.getChatInfo(user)
+  return data
+}
+
+export { shoutout, dance, BRB, whatGame, getUserPicture, getChatInfo }

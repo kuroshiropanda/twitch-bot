@@ -1,3 +1,5 @@
 import { api } from './api'
+import ApiHandler from './apiHandler'
 
-export default api
+export { api }
+export default ApiHandler

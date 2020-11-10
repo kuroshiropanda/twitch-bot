@@ -12,9 +12,12 @@ import { Bot, User } from './services/mongo'
 import Twitch from './services/twitch/twitch'
 import Chat from './services/chat'
 import PubSub from './services/pubsub'
+import ApiHandler from './services/api'
+import DiscordHandler from './services/discord'
 import obsController from './services/obs'
 import Streamlabs from './services/streamlabs'
 import { EventHandler } from './services/events'
+import { BRB } from './common'
 
 (async () => {
   const botClientOnRefresh = async ({ accessToken, refreshToken, expiryDate }) => {
@@ -60,6 +63,8 @@ import { EventHandler } from './services/events'
   const api = new ApiClient({ authProvider: userAuth, initialScopes: twitch.scopes })
   const chat = new Chat(botAuth)
   const pubsub = new PubSub(api)
+  const apiHandler = new ApiHandler(api)
+  const discord = new DiscordHandler()
   const obs = new obsController()
   const io = new EventHandler(server)
 
@@ -67,6 +72,9 @@ import { EventHandler } from './services/events'
     await chat.init()
     await pubsub.init()
     await obs.connect()
+    await discord.init()
+    await io.init()
+    await apiHandler.init()
   } catch (err) {
     console.error(err)
   }
@@ -106,13 +114,13 @@ import { EventHandler } from './services/events'
   })
   app.get('/callback', async (req, res) => {
     const data = await Twitch.getToken(req.query.code)
-    console.log(data[0].scope.length)
     if (data[0].scope.length === 9) {
       Bot.create(data)
+      res.send(data)
     } else {
       User.create(data)
+      res.redirect('/streamlabs')
     }
-    res.redirect('/streamlabs')
   })
   app.get('/streamlabs/callback', async (req, res) => {
     const data = await Streamlabs.getToken(req.query.code)
@@ -126,6 +134,11 @@ import { EventHandler } from './services/events'
   })
   app.get('/channels', async (req, res) => {
     res.send(await Twitch.getUsers())
+  })
+
+  app.get('/clip/:user/:cursor', async (req, res) => {
+    const clips = await BRB(req.params.user, req.params.cursor)
+    res.json(clips)
   })
 
   server.listen(port, () => {

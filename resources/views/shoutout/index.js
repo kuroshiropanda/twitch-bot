@@ -6,7 +6,7 @@ socket.on('connect', () => console.log('socketio: connected'));
 
 const shoutout = document.getElementById('shoutout');
 const player = document.getElementById('clip');
-const title = document.getElementById('username');
+// const title = document.getElementById('username');
 player.volume = 0.5;
 player.autoplay = true;
 
@@ -23,7 +23,7 @@ socket.on('onShoutout', (data) => {
       clip: data.clips[num]
     });
   } else {
-    title.innerHTML = user;
+    // title.innerHTML = user;
     player.src = data.clips[num];
     player.play();
   }
@@ -36,7 +36,7 @@ function randNum(max) {
 function checkQueue() {
   if (clips.length > 0) {
     const queue = clips.shift();
-    title.innerHTML = queue.user;
+    // title.innerHTML = queue.user;
     player.src = queue.clip;
     player.play();
   } else {
@@ -46,6 +46,6 @@ function checkQueue() {
 
 function removeVideo() {
   shoutout.style.display = 'none';
-  title.innerHTML = '';
+  // title.innerHTML = '';
   player.src = '';
 }

@@ -7,4 +7,6 @@ export enum Rewards {
   toBeContinued = '0b21ea53-344a-4ac1-9dd1-b11b3ff50726',
   cancelStop = '1da0e924-a4fa-4056-8261-68dbf477fa07',
   stopStream = '853b6498-800e-486a-a475-4db03e45bc5c',
+  emoteOnly = '91b25d1f-2da2-428b-8a92-ae7326370847',
+  screenshot = '2bdf7f6c-f2c9-43c8-b60e-f179a8573b4a',
 }

@@ -41,7 +41,7 @@ export class Bot {
   }
 
   static async update(data: any) {
-    await BotModel.findOneAndUpdate({ twitchId: data.twitchId }, {
+    await BotModel.findOneAndUpdate({ username: data.username }, {
       token: data.accessToken,
       refreshToken: data.refreshToken,
       expiry: data.expiryDate
@@ -77,7 +77,7 @@ export class User {
   }
 
   static async update(data: any) {
-    await UserModel.findOneAndUpdate({ twitchId: data.twitchId }, {
+    await UserModel.findOneAndUpdate({ username: data.username }, {
       token: data.accessToken,
       refreshToken: data.refreshToken,
       expiry: data.expiryDate

@@ -1,5 +1,5 @@
 import axios from 'axios'
-import io from 'socket.io-client'
+import { Manager } from 'socket.io-client'
 
 import { streamlabs } from '../../config'
 import { onDonateEvent, onOutroEvent } from '../../models'
@@ -8,11 +8,11 @@ import { donateData } from './donate'
 
 export default class Streamlabs {
 
-  private streamlabs: SocketIOClient.Socket
+  private streamlabs: Manager
   private token: string
 
   constructor(token: string, socket: string) {
-    this.streamlabs = io(`https://sockets.streamlabs.com`, {
+    this.streamlabs = new Manager('https://sockets.streamlabs.com', {
       transports: ['websocket'],
       query: {
         token: socket
@@ -21,7 +21,7 @@ export default class Streamlabs {
     this.token = token
   }
 
-  async init() {
+  public async init() {
     this.streamlabs.on('event', (data: donateData) => {
       if (data.type === 'donation') {
         Event.emit(Events.onDonate, new onDonateEvent(data))
@@ -38,7 +38,7 @@ export default class Streamlabs {
           access_token: this.token
         })
       } catch (err) {
-        console.error(err.response)
+        console.error(err.response.data)
       }
     }
   }

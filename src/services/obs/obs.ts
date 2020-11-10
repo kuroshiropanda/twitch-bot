@@ -1,7 +1,7 @@
 import OBSWebSocket from 'obs-websocket-js'
 
 import { obs, twitch } from '../../config'
-import { onRedeemEvent, onBRBEvent, onOutroEvent } from '../../models'
+import { onRedeemEvent, onOutroEvent, onScreenshotEvent, onBRBEvent } from '../../models'
 import { Rewards } from '../pubsub'
 import { Event, Events } from '../events'
 import { Scenes } from './scenes'
@@ -32,7 +32,7 @@ export default class obsController {
     this.stopStream = x
   }
 
-  async connect() {
+  public async connect() {
     try {
       await this.obs.connect({
         address: obs.address,
@@ -40,8 +40,10 @@ export default class obsController {
       })
       console.log('OBSWEBSocket: connected')
     } catch (err) {
-      console.log(err)
+      console.error(err)
     }
+
+    this.obs.on('ConnectionClosed', (data) => { console.log(data) })
 
     this.obs.on('SwitchScenes', (data: any) => this.onChangeScene(data.sceneName))
 
@@ -59,6 +61,7 @@ export default class obsController {
         break
       case Scenes.brb:
         this.mute()
+        this.emit(Events.onBRB, new onBRBEvent('ad', twitch.channel))
         break
       default:
         this.unmute()
@@ -80,6 +83,9 @@ export default class obsController {
       case Rewards.cancelStop:
         this.stopCancel()
         break
+      case Rewards.screenshot:
+        this.screenCapture()
+        break
       default:
         break
     }
@@ -100,6 +106,11 @@ export default class obsController {
     setTimeout(() => {
       this.freezeVintage(false)
     }, 13000)
+  }
+
+  private async screenCapture() {
+    const currentScene = await this.getCurrentScene()
+    this.screenshot(currentScene)
   }
 
   private async silence() {
@@ -128,10 +139,9 @@ export default class obsController {
   private stopCancel() {
     this.obs.send('SetCurrentScene', {
       'scene-name': this.scene ? this.scene : 'main display'
-    }).catch((e) => console.log(e))
+    }).catch((e) => console.error(e))
 
     clearTimeout(this.timeout)
-    console.log(this.timeout)
   }
 
   private async mute() {
@@ -196,6 +206,22 @@ export default class obsController {
         source: source,
         mute: bool
       })
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  private async screenshot(source: string) {
+    try {
+      let filePath: string = `E:\\Pictures\\obs\\${new Date().toISOString().replace(/:/gi, '-')}.png`
+
+      const img = await this.obs.send('TakeSourceScreenshot', {
+        sourceName: source,
+        saveToFilePath: filePath,
+        fileFormat: 'png'
+      })
+
+      this.emit(Events.onScreenshot, new onScreenshotEvent(filePath))
     } catch (err) {
       console.error(err)
     }

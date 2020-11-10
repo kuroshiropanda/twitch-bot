@@ -1,8 +1,8 @@
 declare let process: {
   env: {
-    CHANNEL: string,
-    TWITCH_CLIENT_ID: string,
-    TWITCH_CLIENT_SECRET: string,
+    CHANNEL: string
+    TWITCH_CLIENT_ID: string
+    TWITCH_CLIENT_SECRET: string
     TWITCH_CALLBACK_URI: string
   }
 }
