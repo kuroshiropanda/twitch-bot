@@ -4,6 +4,7 @@ declare let process: {
     TWITCH_CLIENT_ID: string
     TWITCH_CLIENT_SECRET: string
     TWITCH_CALLBACK_URI: string
+    EVENTSUB_SECRET: string
   }
 }
 
@@ -12,6 +13,7 @@ interface clientObj {
   clientId: string
   clientSecret: string
   redirectURI: string
+  secret: string
   scopes: string[]
   botScopes: string[]
 }
@@ -21,25 +23,30 @@ export const twitch: clientObj = {
   clientId: process.env.TWITCH_CLIENT_ID,
   clientSecret: process.env.TWITCH_CLIENT_SECRET,
   redirectURI: process.env.TWITCH_CALLBACK_URI,
+  secret: process.env.EVENTSUB_SECRET,
   scopes: [
     'bits:read',
     'channel:moderate',
     'channel:edit:commercial',
+    'channel:manage:broadcast',
+    'channel:manage:redemptions',
     'channel:read:hype_train',
-    'channel:read:subscriptions',
     'channel:read:redemptions',
-    'clips:edit',
+    'channel:read:subscriptions',
     'chat:edit',
     'chat:read',
+    'clips:edit',
+    'moderation:read',
     'user:edit',
     'user:edit:broadcast',
+    'user:edit:follows',
     'user:read:broadcast',
     'user:read:email',
+    'channel_subscriptions',
     'channel_commercial',
     'channel_editor',
-    'channel_feed_edit',
-    'channel_feed_read',
-    'channel_subscriptions'
+    'user_read',
+    'user_blocks_read'
   ],
   botScopes: [
     'channel:moderate',
@@ -48,6 +55,7 @@ export const twitch: clientObj = {
     'whispers:read',
     'whispers:edit',
     'channel:edit:commercial',
+    'channel:manage:broadcast',
     'clips:edit',
     'channel_commercial',
     'channel_editor',
