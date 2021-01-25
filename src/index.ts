@@ -1,139 +1,152 @@
 import dotenv from 'dotenv'
 dotenv.config()
 
+import { promises as fs } from 'fs'
 import http from 'http'
 import express from 'express'
 import { ApiClient } from 'twitch'
-import { AuthProvider, RefreshableAuthProvider, StaticAuthProvider } from 'twitch-auth'
 
 import { twitch } from './config/twitch'
 import { streamlabs } from './config/streamlabs'
-import { Bot, User } from './services/mongo'
-import Twitch from './services/twitch/twitch'
+
+import Twitch from './services/twitch'
 import Chat from './services/chat'
 import PubSub from './services/pubsub'
 import ApiHandler from './services/api'
+import EventSub from './services/eventsub'
 import DiscordHandler from './services/discord'
-import obsController from './services/obs'
+import OBSController from './services/obs'
 import Streamlabs from './services/streamlabs'
 import { EventHandler } from './services/events'
+
 import { BRB } from './common'
+import User from './user'
+import Bot from './bot'
+import Steam from './services/steam'
 
 (async () => {
-  const botClientOnRefresh = async ({ accessToken, refreshToken, expiryDate }) => {
-    let newTokenData: object = {
-      username: bot.username,
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-      expiry: expiryDate === null ? null : expiryDate.getTime()
-    }
-
-    Bot.update(newTokenData)
-  }
-  const bot: any = await Bot.read({ username: 'kuroshiropanda_' })
-  const botAuth: AuthProvider = new RefreshableAuthProvider(
-    new StaticAuthProvider(twitch.clientId, bot.token), {
-    clientSecret: twitch.clientSecret,
-    refreshToken: bot.refreshToken,
-    expiry: bot.expiry === null ? null : new Date(bot.expiry),
-    onRefresh: botClientOnRefresh
-  })
-
-  const userClientOnRefresh = async ({ accessToken, refreshToken, expiryDate }) => {
-    let newTokenData: object = {
-      username: user.username,
-      accessToken: accessToken,
-      refreshToken: refreshToken,
-      expiry: expiryDate === null ? null : expiryDate.getTime()
-    }
-
-    User.update(newTokenData)
-  }
-  const user: any = await User.read({ username: 'kuroshiropanda' })
-  const userAuth: AuthProvider = new RefreshableAuthProvider(
-    new StaticAuthProvider(twitch.clientId, user.token), {
-    clientSecret: twitch.clientSecret,
-    refreshToken: user.refreshToken,
-    expiry: user.expiry === null ? null : new Date(user.expiry),
-    onRefresh: userClientOnRefresh
-  })
 
   const app = express()
   const server = http.createServer(app)
-  const api = new ApiClient({ authProvider: userAuth, initialScopes: twitch.scopes })
-  const chat = new Chat(botAuth)
-  const pubsub = new PubSub(api)
-  const apiHandler = new ApiHandler(api)
   const discord = new DiscordHandler()
-  const obs = new obsController()
   const io = new EventHandler(server)
 
-  try {
-    await chat.init()
-    await pubsub.init()
+  await discord.init()
+  await io.init()
+
+  const obsFunction = async () => {
+    const obs = new OBSController()
     await obs.connect()
-    await discord.init()
-    await io.init()
-    await apiHandler.init()
-  } catch (err) {
-    console.error(err)
   }
 
-  if (user.streamlabs) {
-    const streamlabs = new Streamlabs(user.streamlabs.token, user.streamlabs.socketToken)
-
-    try {
-      await streamlabs.init()
-    } catch (err) {
-      console.error(err)
+  const botFunction = async () => {
+    const botJSON = await Twitch.readJSON('bot.json')
+    if (botJSON.token.length !== 0) {
+      const bot = new Bot(botJSON)
+      const chat = new Chat(bot.AuthProvider())
+      await chat.init()
+    } else {
+      const url = `http://localhost:3000/bot/login`
+      console.info(`open this on your browser: ${ url }`)
     }
   }
 
-  const port: number = 3000
+  const userFunction = async () => {
+    const userJSON = await Twitch.readJSON('user.json')
+    if (userJSON.token.length !== 0) {
+      const user = new User(userJSON)
+      const api = new ApiClient({ authProvider: user.AuthProvider() })
+      const apiHandler = new ApiHandler(api)
+      const pubsub = new PubSub(api)
+      const eventsub = new EventSub(userJSON.id)
+      await apiHandler.init()
+      await pubsub.init()
+      await eventsub.init()
+    } else {
+      const url = `http://localhost:3000/login`
+      console.info(`open this on your browser: ${ url }`)
+    }
+  }
+
+  const streamlabsFunction = async () => {
+    const slJSON = await Streamlabs.readJSON('streamlabs.json')
+    if (slJSON.token.length !== 0) {
+      const sl = new Streamlabs(slJSON.socket, slJSON.token)
+      await sl.init()
+    }
+  }
+
+  obsFunction()
+  botFunction()
+  userFunction()
+  streamlabsFunction()
+
+  const port = 3000
 
   app.use('/', express.static('resources/views/index'))
   app.use('/clips', express.static('resources/views/clips'))
   app.use('/so', express.static('resources/views/shoutout'))
   app.use('/niconico', express.static('resources/views/niconico'))
+
   app.get('/obs/connect', async (req, res) => {
-    try {
-      await obs.connect()
-      res.send('obs: connected')
-    } catch (err) {
-      res.send(err)
-    }
+    obsFunction()
+    res.send('obs: connected')
   })
+
   app.get('/bot/login', (req, res) => {
-    res.redirect(`https://id.twitch.tv/oauth2/authorize?client_id=${twitch.clientId}&redirect_uri=${twitch.redirectURI}&response_type=code&scope=${twitch.botScopes.join(' ')}&force_verify=true`)
+    const url = `https://id.twitch.tv/oauth2/authorize?client_id=${ twitch.clientId }&redirect_uri=${ twitch.redirectURI }&response_type=code&scope=${ twitch.botScopes.join(' ') }&force_verify=true`
+    res.redirect(url)
   })
+
   app.get('/login', (req, res) => {
-    res.redirect(`https://id.twitch.tv/oauth2/authorize?client_id=${twitch.clientId}&redirect_uri=${twitch.redirectURI}&response_type=code&scope=${twitch.scopes.join(' ')}&force_verify=true`)
+    const url = `https://id.twitch.tv/oauth2/authorize?client_id=${ twitch.clientId }&redirect_uri=${ twitch.redirectURI }&response_type=code&scope=${ twitch.scopes.join(' ') }&force_verify=true`
+    res.redirect(url)
   })
+
   app.get('/streamlabs', (req, res) => {
-    res.redirect(`https://streamlabs.com/api/v1.0/authorize?response_type=code&client_id=${streamlabs.clientId}&redirect_uri=${streamlabs.redirectURI}&scope=${streamlabs.scopes.join('+')}`)
+    const url = `https://streamlabs.com/api/v1.0/authorize?response_type=code&client_id=${ streamlabs.clientId }&redirect_uri=${ streamlabs.redirectURI }&scope=${ streamlabs.scopes.join('+') }`
+    res.redirect(url)
   })
+
   app.get('/callback', async (req, res) => {
     const data = await Twitch.getToken(req.query.code)
-    if (data[0].scope.length === 9) {
-      Bot.create(data)
+    if (data.auth.scope.length <= 8) {
+      const bot = new Bot()
+      bot.id = data.user.id
+      bot.username = data.user.login
+      bot.token = data.auth.access_token
+      bot.refreshToken = data.auth.refresh_token
+      bot.expiry = data.auth.expires_in
+      const save = await bot.save()
       res.send(data)
+
+      if (save) botFunction()
     } else {
-      User.create(data)
+      const user = new User()
+      user.id = data.user.id
+      user.username = data.user.login
+      user.token = data.auth.access_token
+      user.refreshToken = data.auth.refresh_token
+      user.expiry = data.auth.expires_in
+      const save = await user.save()
+
+      if (save) userFunction()
       res.redirect('/streamlabs')
     }
   })
+
   app.get('/streamlabs/callback', async (req, res) => {
     const data = await Streamlabs.getToken(req.query.code)
-    User.addStreamlabs({
-      twitchId: user.twitchId,
+    const file = {
       token: data[0].access_token,
-      refresh_token: data[0].refresh_token,
-      socket_token: data[1].socket_token
-    })
+      refreshToken: data[0].refresh_token,
+      expiry: data[0].expires_in,
+      socket: data[1].socket_token
+    }
+    await fs.writeFile('streamlabs.json', JSON.stringify(file, null, 2), 'utf-8')
+
+    streamlabsFunction()
     res.json(data)
-  })
-  app.get('/channels', async (req, res) => {
-    res.send(await Twitch.getUsers())
   })
 
   app.get('/clip/:user/:cursor', async (req, res) => {
@@ -141,7 +154,12 @@ import { BRB } from './common'
     res.json(clips)
   })
 
+  app.get('/update/steam', async (req, res) => {
+    const steam = await Steam.updateJSON()
+    res.send(steam)
+  })
+
   server.listen(port, () => {
-    console.log(`app listening at http://localhost:${port}`)
+    console.log(`app listening at http://localhost:${ port }`)
   })
 })()

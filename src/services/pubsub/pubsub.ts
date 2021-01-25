@@ -35,7 +35,6 @@ export default class PubSub {
   }
 
   private onRedeem(msg: PubSubRedemptionMessage) {
-    console.log(`${msg.userName} redeemed ${msg.rewardId} : ${msg.rewardName}`)
     this.emit(Events.onChannelRedeem, new onRedeemEvent(msg))
   }
 

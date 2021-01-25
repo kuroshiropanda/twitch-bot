@@ -12,7 +12,13 @@ export enum Events {
   onOutro = 'onOutro',
   onScreenshot = 'onScreenshot',
   onClip = 'onClip',
+  onPostClip = 'onPostClip',
   onCreateClip = 'onCreateClip',
   onBRB = 'onBRB',
-  toSay = 'toSay'
+  toSay = 'toSay',
+  onStreamLive = 'onStreamLive',
+  onStreamOffline = 'onStreamOffline',
+  toPostLive = 'toPostLive',
+  onRewardComplete = 'onRewardComplete',
+  onGetGame = 'onGetGame'
 }

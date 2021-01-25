@@ -1,5 +1,7 @@
-import obsController from './obs'
+import OBSController from './obs'
 import { Scenes } from './scenes'
+import { AudioDevice } from './audio'
 
-export default obsController
+export default OBSController
 export { Scenes }
+export { AudioDevice }

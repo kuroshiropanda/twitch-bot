@@ -10,7 +10,7 @@ interface SLObject {
   clientId: string
   clientSecret: string
   redirectURI: string
-  scopes: Array<string>
+  scopes: string[]
 }
 
 export const streamlabs: SLObject = {

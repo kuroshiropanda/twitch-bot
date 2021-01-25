@@ -3,16 +3,29 @@ import { ChatClient, ChatRaidInfo } from 'twitch-chat-client'
 import { ChatClientOptions } from 'twitch-chat-client/lib/ChatClient'
 import { TwitchPrivateMessage } from 'twitch-chat-client/lib/StandardCommands/TwitchPrivateMessage'
 import { UserNotice } from 'twitch-chat-client/lib/Capabilities/TwitchCommandsCapability/MessageTypes/UserNotice'
-import say from 'say'
 
 import { twitch } from '../../config'
 import { dance, shoutout, getChatInfo } from '../../common'
-import { onBitsEvent, onChatEvent, onRedeemEvent, onSubEvent, toSayEvent, onDonateEvent, onCommandEvent, onClipEvent, onSetGameEvent, onCreateClipEvent, onBRBEvent, onShoutoutEvent } from '../../models'
-import { Log } from '../mongo'
 import { Event, Events } from '../events'
 import { Rewards } from '../pubsub'
 import { Commands } from './commands'
-import { CommercialLength } from 'twitch/lib'
+import { CommercialLength, HelixCustomRewardRedemptionTargetStatus } from 'twitch/lib'
+import {
+  onBitsEvent,
+  onChatEvent,
+  onRedeemEvent,
+  onSubEvent,
+  toSayEvent,
+  onDonateEvent,
+  onPostClipEvent,
+  onSetGameEvent,
+  onCreateClipEvent,
+  onBRBEvent,
+  onHostEvent,
+  onRaidEvent,
+  onRewardCompleteEvent,
+  onGetGameEvent
+} from '../../models'
 
 export default class Chat {
 
@@ -26,10 +39,15 @@ export default class Chat {
       webSocket: true,
       channels: [this.channel],
       logger: {
-        minLevel: 'INFO'
+        name: 'chat',
+        minLevel: 'INFO',
+        colors: true,
+        emoji: true,
+        timestamps: true
       }
     }
-    this.chat = new ChatClient(auth, this.opts)
+    this.chat = new ChatClient(auth,
+      this.opts)
   }
 
   public async init() {
@@ -40,58 +58,61 @@ export default class Chat {
       console.error(err)
     }
 
-    this.chat.onConnect(() => {
-      this.chat.action(this.channel, 'chat connected')
-    })
-    this.chat.onNoPermission((channel: string, msg: string) => this.sendChat('does not have enough permission'))
+    this.chat.onConnect(() => this.chat.action(this.channel, 'chat connected'))
+    this.chat.onRegister(() => this.chat.action(this.channel, 'chat connected'))
     this.chat.onMessage((channel: string, user: string, message: string, msg: TwitchPrivateMessage) => this.onChat(channel, user, message, msg))
     this.chat.onRaid((channel: string, user: string, raidInfo: ChatRaidInfo, msg: UserNotice) => this.onRaid(channel, user, raidInfo, msg))
     this.chat.onHosted((channel: string, user: string, auto: boolean, viewers?: number) => this.onHosted(channel, user, auto, viewers))
     this.chat.onTimeout((channel: string, user: string, duration: number) => this.onTimeout(channel, user, duration))
 
-    Event.addListener(Events.onChannelRedeem, (onRedeem: onRedeemEvent) => this.onChannelRedeem(onRedeem))
-    Event.addListener(Events.onSub, (onSub: onSubEvent) => this.onSub(onSub))
-    Event.addListener(Events.onBits, (onBits: onBitsEvent) => this.onBits(onBits))
-    Event.addListener(Events.onDonate, (onDonateEvent: onDonateEvent) => this.onDonate(onDonateEvent))
-    Event.addListener(Events.toSay, (toSay: toSayEvent) => this.toSay(toSay))
-    Event.addListener(Events.onBRB, (onBRBEvent: onBRBEvent) => this.onBRB(onBRBEvent))
+    Event.addListener(Events.onChannelRedeem, (data: onRedeemEvent) => this.onChannelRedeem(data))
+    Event.addListener(Events.onSub, (data: onSubEvent) => this.onSub(data))
+    Event.addListener(Events.onBits, (data: onBitsEvent) => this.onBits(data))
+    Event.addListener(Events.onDonate, (data: onDonateEvent) => this.onDonate(data))
+    Event.addListener(Events.toSay, (data: toSayEvent) => this.toSay(data))
+    Event.addListener(Events.onBRB, (data: onBRBEvent) => this.onBRB(data))
   }
 
   private async onChat(channel: string, user: string, message: string, msg: TwitchPrivateMessage) {
-    if (user === this.chat.currentNick || 'u2san_') return
     if (await this.isBot(msg)) return
 
-    const command = message.toLowerCase().trim()
+    const trimmed = message.toLowerCase().trim()
 
-    if (!command.startsWith('!') && !command.startsWith('https')) {
+    if (!trimmed.startsWith('!') && !trimmed.startsWith('https')) {
       this.emit(Events.onChat, new onChatEvent(msg.tags.get('id'), user, msg.parseEmotes(), message, msg.userInfo))
-    } else if (command.startsWith('https://clips.twitch.tv') || command.startsWith('https://www.twitch.tv/kuroshiropanda/clip')) {
-      this.emit(Events.onClip, new onClipEvent(message))
+    } else if (trimmed.startsWith('https://clips.twitch.tv')) {
+      this.emit(Events.onPostClip, new onPostClipEvent(user, message.replace('https://clips.twitch.tv/', '')))
     } else {
-      const split = command.split(' ')
-      const args = message.replace(split[0], '').trim()
-      switch (split[0]) {
+      const [command, ...args] = trimmed.split(' ')
+      console.log(command, args)
+      switch (command) {
         case Commands.dance:
-          this.sendChat('for each sub / 500 bits / $5 donation there would be a random chance for a dance')
+          this.chat.say(channel, 'for every $5 I\'ll do a dance that you want')
+          break
+        case Commands.hypetrain:
+          this.chat.say(channel, 'for each hype train level top contributors has the power to make me do dares/dance (I\'m not obliged to do the dares meaning I might decline on doing it)')
+          break
+        case Commands.spoiler:
+          this.chat.deleteMessage(channel, msg).catch((reason) => console.error(reason))
+          this.sendChat(`${ user } used the !spoiler command be careful when clicking on the deleted message if you don't want to be spoiled`)
           break
         case Commands.changeGame:
-          if (split.length > 1 && this.isMod(msg)) {
-            this.emit(Events.onSetGame, new onSetGameEvent(args, msg.channelId))
+          if (args.length >= 1 && this.isMod(msg)) {
+            this.emit(Events.onSetGame, new onSetGameEvent(args.join(' '), msg.channelId))
+          } else {
+            this.emit(Events.onGetGame, new onGetGameEvent(channel, msg.channelId, user))
           }
           break
         case Commands.createClip:
-          this.emit(Events.onCreateClip, new onCreateClipEvent(msg.channelId))
+          this.emit(Events.onCreateClip, new onCreateClipEvent(user, msg.channelId))
           break
         case Commands.shoutout:
           if (this.isMod(msg)) {
-            shoutout(args)
+            shoutout(args[0])
           }
           break
         case Commands.vanish:
           this.chat.timeout(channel, user, 1, 'vanish command')
-          break
-        case '!adbreak':
-          this.runAd(60)
           break
         default:
           break
@@ -110,7 +131,7 @@ export default class Chat {
   }
 
   private onTimeout(channel: string, user: string, duration: number) {
-    this.chat.say(channel, `${user} was timed out for ${duration}`)
+    this.chat.say(channel, `${ user } was timed out for ${ duration }`)
   }
 
   private emit(event: Events, payload: any) {
@@ -118,7 +139,7 @@ export default class Chat {
   }
 
   private shoutOut(channel: string, user: string) {
-    this.sendChat(`!so ${user}`)
+    this.sendChat(`!so ${ user }`)
     shoutout(user)
   }
 
@@ -128,59 +149,58 @@ export default class Chat {
 
   private async isBot(msg: TwitchPrivateMessage) {
     const info = await getChatInfo(msg.userInfo.userId)
-    return info.isAtLeastKnownBot || info.isKnownBot || info.isVerifiedBot
+    const u2san = msg.userInfo.userName === 'u2san_'
+    const self = this.chat.currentNick === msg.userInfo.userName
+    return info.isAtLeastKnownBot || info.isKnownBot || info.isVerifiedBot || u2san || self
   }
 
   private gonnaDance(multiplier: number) {
-    this.chat.say(this.channel, `${this.channel} will ${dance(multiplier) ? 'dance' : 'not dance'}`)
+    this.chat.say(this.channel, `${ this.channel } will ${ dance(multiplier) ? 'dance' : 'not dance' }`)
   }
 
   private toSay(event: toSayEvent) {
     this.chat.say(this.channel, event.msg)
   }
 
-  private onChannelRedeem(event: onRedeemEvent) {
-    switch (event.reward.rewardId) {
+  private onChannelRedeem(redeem: onRedeemEvent) {
+    switch (redeem.rewardId) {
       case Rewards.ad:
         this.chat.runCommercial(this.channel, 30)
         break
-      case Rewards.shoutOut:
-        say.speak(`Shoutout to ${event.reward.userName}`)
-        break
       case Rewards.changeTitle:
-        this.sendChat(`!settitle ${event.reward.message}`)
+        this.sendChat(`!settitle ${ redeem.message }`, redeem)
         break
       case Rewards.timeout:
-        this.chat.timeout(this.channel, event.reward.message, 180, `${event.reward.userDisplayName} redeemed ${event.reward.rewardName}`)
+        this.timeoutUser(redeem)
         break
       case Rewards.cancelStop:
-        this.sendChat(`thanks to ${event.reward.userName} for cancelling the stop stream reward`)
+        this.sendChat(`thanks to ${ redeem.user } for cancelling the stop stream reward`)
         break
       case Rewards.emoteOnly:
         this.emoteOnlyReward()
         break
       case Rewards.screenshot:
-        this.sendChat(`@${event.reward.userName} screenshot saved on discord you can check it out on the #screenshots channel on discord`)
+        this.sendChat(`@${ redeem.user } screenshot saved on discord you can check it out on the #screenshots channel on discord`)
         break
       default:
-        this.chat.say(this.channel, `${event.reward.userName} redeemed ${event.reward.rewardName}`)
+        this.sendChat(`${ redeem.user } redeemed ${ redeem.rewardName }`)
         break
     }
   }
 
-  private onSub(event: onSubEvent) {
-    let multiplier = Number(event.sub.subPlan === 'Prime' ? 1500 : event.sub.subPlan) / 1000
+  private onSub(sub: onSubEvent) {
+    const multiplier = Number(sub.plan === 'Prime' ? 1500 : sub.plan) / 1000
     this.gonnaDance(multiplier)
   }
 
-  private onBits(event: onBitsEvent) {
-    let multiplier = event.bit.bits <= 500 ? 1 : Math.floor(event.bit.bits / 1000)
-    if (event.bit.bits >= 500) this.gonnaDance(multiplier)
+  private onBits(cheer: onBitsEvent) {
+    const multiplier = cheer.bits <= 500 ? 1 : Math.floor(cheer.bits / 1000)
+    if (cheer.bits >= 500) this.gonnaDance(multiplier)
   }
 
-  private onDonate(event: onDonateEvent) {
-    let multiplier = Number(event.donate.message[0].amount) / 10
-    if (Number(event.donate.message[0].amount) >= 5) this.gonnaDance(multiplier)
+  private onDonate(tip: onDonateEvent) {
+    const multiplier = Number(tip.amount) / 10
+    if (Number(tip.amount) >= 5) this.gonnaDance(multiplier)
   }
 
   private onBRB(event: onBRBEvent) {
@@ -195,11 +215,46 @@ export default class Chat {
     setTimeout(async () => await this.chat.disableEmoteOnly(this.channel), 120 * 1000)
   }
 
-  private async sendChat(msg: string) {
-    this.chat.say(this.channel, msg)
+  private async sendChat(msg: string, event?: onRedeemEvent) {
+    let complete: HelixCustomRewardRedemptionTargetStatus
+    try {
+      await this.chat.say(this.channel, msg)
+      complete = 'FULFILLED'
+    } catch (err) {
+      console.error(err)
+      complete = 'CANCELED'
+    }
+
+    if (event) this.rewardComplete(event.channel, event.rewardId, event.id, complete)
   }
 
-  private async runAd(minutes: CommercialLength) {
-    await this.chat.runCommercial(this.channel, minutes)
+  private async runAd(minutes: CommercialLength, event?: onRedeemEvent) {
+    let complete: HelixCustomRewardRedemptionTargetStatus
+    try {
+      await this.chat.runCommercial(this.channel, minutes)
+      complete = 'FULFILLED'
+    } catch (e) {
+      console.error(e)
+      complete = 'CANCELED'
+    }
+
+    if (event) this.rewardComplete(event.channel, event.rewardId, event.id, complete)
+  }
+
+  private async timeoutUser(timeout: onRedeemEvent) {
+    let complete: HelixCustomRewardRedemptionTargetStatus
+    try {
+      await this.chat.timeout(this.channel, timeout.message, 180, `${ timeout.user } redeemed ${ timeout.rewardName }`)
+      complete = 'FULFILLED'
+    } catch (e) {
+      console.error(e)
+      complete = 'CANCELED'
+    }
+
+    this.rewardComplete(timeout.channel, timeout.rewardId, timeout.id, complete)
+  }
+
+  private rewardComplete(channelId: string, rewardId: string, redemptionId: string, complete: HelixCustomRewardRedemptionTargetStatus) {
+    this.emit(Events.onRewardComplete, new onRewardCompleteEvent(channelId, rewardId, redemptionId, complete))
   }
 }

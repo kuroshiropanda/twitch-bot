@@ -1,8 +1,9 @@
-FROM node:14.8.0-alpine
+FROM node:lts-alpine
 WORKDIR /app
 COPY package*.json ./
 RUN npm ci
 COPY ./ ./
 RUN npx tsc
-EXPOSE 3000
+EXPOSE 3000 42394
+VOLUME [ "/images" ]
 CMD ["node","dist/index.js"]

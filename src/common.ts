@@ -1,9 +1,19 @@
-import { api } from './services/api'
+import { UserIdResolvable } from 'twitch/lib'
 
-import { onShoutoutEvent, toSayEvent } from './models'
+import { api } from './services/api'
 import { Event, Events } from './services/events'
 
-const getClips = async (name: string, limit: number = 50, cursor?: string) => {
+import {
+  onShoutoutEvent,
+  toSayEvent
+} from './models'
+
+interface clipObject {
+  title: string,
+  clip: string
+}
+
+const getClips = async (name: string, limit = 50, cursor?: string) => {
   try {
     const user = await api.kraken.users.getUserByName(name)
     const clips = await api.helix.clips.getClipsForBroadcaster(user.id, {
@@ -48,9 +58,9 @@ const shoutout = async (user: string) => {
 const BRB = async (user: any, cursor: string) => {
   try {
     const clips = await getClips(user, 100, cursor)
-    let clipArr: object[]
+    let clipArr: clipObject[]
 
-    for (let clip of clips) {
+    for (const clip of clips) {
       clipArr.push({
         title: clip.title,
         clip: thumbnailToUrl(clip.thumbnailUrl, '360')
@@ -63,7 +73,7 @@ const BRB = async (user: any, cursor: string) => {
   }
 }
 
-const dance = (multiplier: number = 1) => Math.random() < (0.25 * multiplier)
+const dance = (multiplier = 1) => Math.random() < (0.25 * multiplier)
 
 const whatGame = async (channel: string) => {
   const user = await api.kraken.channels.getChannel(channel)
@@ -80,4 +90,19 @@ const getChatInfo = async (user: string) => {
   return data
 }
 
-export { shoutout, dance, BRB, whatGame, getUserPicture, getChatInfo }
+const getFollowers = async (user: UserIdResolvable) => {
+  const data = await api.helix.users.getFollows({
+    followedUser: user
+  })
+  return data
+}
+
+export {
+  shoutout,
+  dance,
+  BRB,
+  whatGame,
+  getUserPicture,
+  getChatInfo,
+  getFollowers
+}

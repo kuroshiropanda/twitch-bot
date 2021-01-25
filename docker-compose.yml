@@ -2,31 +2,17 @@ version: "3.8"
 
 services:
   twitch-bot:
-    container_name: kuro
-    init: true
+    container_name: bot
     build: ./
+    volumes:
+      - ${OBS_SCREENSHOT}:/images
     ports:
       - "3000:3000"
-    restart: on-failure
-  # mongo:
-  #   container_name: mongodb
-  #   image: mongo:latest
-  #   restart: unless-stopped
-  #   environment:
-  #     MONGO_INITDB_ROOT_USERNAME: root
-  #     MONGO_INITDB_ROOT_PASSWORD: root
-  #     MONGO_INITDB_DATABASE: u2san
-  #   volumes:
-  #     - ./docker/mongo/config:/data/configdb
-  #     - ./docker/mongo/db:/data/db
-  #     - ./docker/mongo/init:/docker-entrypoint-initdb.d
-  # mongo-express:
-  #   container_name: mongo-express
-  #   image: mongo-express:latest
-  #   restart: unless-stopped
+      - "42394:42394"
+    restart: unless-stopped
+  # dashboard:
+  #   container_name: dashboard
+  #   image: node:lts-alpine
   #   ports:
-  #     - "8081:8081"
-  #   environment:
-  #     # VCAP_APP_HOST: 127.0.0.1
-  #     ME_CONFIG_MONGODB_ADMINUSERNAME: root
-  #     ME_CONFIG_MONGODB_ADMINPASSWORD: root
+  #     - "80:4000"
+  #   restart: unless-stopped

@@ -1,12 +1,14 @@
 import OBSWebSocket from 'obs-websocket-js'
 
 import { obs, twitch } from '../../config'
-import { onRedeemEvent, onOutroEvent, onScreenshotEvent, onBRBEvent } from '../../models'
+import { onRedeemEvent, onOutroEvent, onScreenshotEvent, onBRBEvent, onHostEvent, onRewardCompleteEvent, onCreateClipEvent } from '../../models'
 import { Rewards } from '../pubsub'
 import { Event, Events } from '../events'
 import { Scenes } from './scenes'
+import { AudioDevice } from './audio'
+import { HelixCustomRewardRedemptionTargetStatus } from 'twitch/lib'
 
-export default class obsController {
+export default class OBSController {
 
   private obs: OBSWebSocket
   private currentScene: string
@@ -43,11 +45,15 @@ export default class obsController {
       console.error(err)
     }
 
-    this.obs.on('ConnectionClosed', (data) => { console.log(data) })
+    this.obs.on('ConnectionClosed', async () => this.obs.disconnect())
 
+    this.obs.on('StreamStarted', () => {
+      this.setSourceVisibility('intro songs', true)
+      this.setSourceVisibility('start websocket', false)
+    })
     this.obs.on('SwitchScenes', (data: any) => this.onChangeScene(data.sceneName))
 
-    Event.addListener(Events.onChannelRedeem, (onRedeem: onRedeemEvent) => this.onRedeem(onRedeem))
+    Event.addListener(Events.onChannelRedeem, (data: onRedeemEvent) => this.onRedeem(data))
   }
 
   private emit(event: Events, payload?: any) {
@@ -55,7 +61,7 @@ export default class obsController {
   }
 
   private async onChangeScene(scene: string) {
-    switch(scene) {
+    switch (scene) {
       case Scenes.outro:
         this.emit(Events.onOutro, new onOutroEvent(true))
         break
@@ -69,59 +75,68 @@ export default class obsController {
     }
   }
 
-  private onRedeem(onRedeem: onRedeemEvent) {
-    switch(onRedeem.reward.rewardId) {
+  private onRedeem(redeem: onRedeemEvent) {
+    switch (redeem.rewardId) {
       case Rewards.toBeContinued:
-        this.tbc()
+        this.tbc(redeem)
         break
       case Rewards.silence:
-        this.silence()
+        this.silence(redeem)
         break
       case Rewards.stopStream:
-        this.stop()
+        this.stop(redeem)
         break
       case Rewards.cancelStop:
-        this.stopCancel()
+        this.stopCancel(redeem)
         break
       case Rewards.screenshot:
-        this.screenCapture()
+        this.screenCapture(redeem)
+        break
+      case Rewards.timeWarp:
+        this.timeWarp(redeem.user, redeem)
         break
       default:
         break
     }
   }
 
-  private async tbc() {
+  private async tbc(data: onRedeemEvent) {
     const scene = await this.getCurrentScene()
     this.setCurrentScene(Scenes.freeze)
 
-    setTimeout(() => {
-      this.freezeVintage(true)
-    }, 3800)
-
-    setTimeout(() => {
-      this.setCurrentScene(scene)
-    }, 12000)
-
+    setTimeout(() => this.freezeVintage(true), 3800)
+    setTimeout(() => this.setCurrentScene(scene), 12000)
     setTimeout(() => {
       this.freezeVintage(false)
+      this.emit(Events.onRewardComplete, new onRewardCompleteEvent(data.channel, data.rewardId, data.id, 'FULFILLED'))
     }, 13000)
   }
 
-  private async screenCapture() {
-    const currentScene = await this.getCurrentScene()
-    this.screenshot(currentScene)
+  private async timeWarp(user: string, data: onRedeemEvent) {
+    this.setFilterVisibility('webcam', 'Time Warp Scan', true)
+
+    setTimeout(() => this.screenshot(data, 'webcam'), 11000)
+    setTimeout(() => {
+      this.setFilterVisibility('webcam', 'Time Warp Scan', false)
+      this.emit(Events.onCreateClip, new onCreateClipEvent(user, data.channel))
+    }, 15000)
   }
 
-  private async silence() {
-    await this.setMute('mic', true)
+  private async screenCapture(screenshot: onRedeemEvent) {
+    const currentScene = await this.getCurrentScene()
+    this.screenshot(screenshot, currentScene)
+  }
+
+  private async silence(data: onRedeemEvent) {
+    await this.setMute(AudioDevice.mic, true)
 
     setTimeout(async () => {
-      await this.setMute('mic', false)
+      await this.setMute(AudioDevice.mic, false)
+      this.emit(Events.onRewardComplete, new onRewardCompleteEvent(data.channel, data.rewardId, data.id, 'FULFILLED'))
     }, 30000)
   }
 
-  private async stop() {
+  private async stop(data: onRedeemEvent) {
     try {
       const scene = await this.getCurrentScene()
       this.scene = scene
@@ -134,24 +149,28 @@ export default class obsController {
     this.timeout = setTimeout(async () => {
       await this.obs.send('StopStreaming')
     }, 120 * 1000)
+
+    this.emit(Events.onRewardComplete, new onRewardCompleteEvent(data.channel, data.rewardId, data.id, 'FULFILLED'))
   }
 
-  private stopCancel() {
+  private stopCancel(data: onRedeemEvent) {
     this.obs.send('SetCurrentScene', {
-      'scene-name': this.scene ? this.scene : 'main display'
+      'scene-name': this.scene ? this.scene : Scenes.display
     }).catch((e) => console.error(e))
 
     clearTimeout(this.timeout)
+
+    this.emit(Events.onRewardComplete, new onRewardCompleteEvent(data.channel, data.rewardId, data.id, 'FULFILLED'))
   }
 
   private async mute() {
-    this.setMute('earphones', true)
-    this.setMute('mic', true)
+    this.setMute(AudioDevice.audio1, true)
+    this.setMute(AudioDevice.mic, true)
   }
 
   private async unmute() {
-    this.setMute('earphones', false)
-    this.setMute('mic', false)
+    this.setMute(AudioDevice.audio1, false)
+    this.setMute(AudioDevice.mic, false)
   }
 
   private async getCurrentScene() {
@@ -175,21 +194,16 @@ export default class obsController {
   }
 
   private async freezeVintage(bool: boolean) {
-    try {
-      this.obs.send('SetSourceFilterVisibility', {
-        sourceName: 'IRL',
-        filterName: 'Freeze',
-        filterEnabled: bool
-      })
+    await this.setFilterVisibility('IRL', 'Vintage', bool)
+    await this.setFilterVisibility('IRL', 'Freeze', bool)
+  }
 
-      this.obs.send('SetSourceFilterVisibility', {
-        sourceName: 'IRL',
-        filterName: 'Vintage',
-        filterEnabled: bool
-      })
-    } catch (err) {
-      console.error(err)
-    }
+  private async setFilterVisibility(source: string, filter: string, enabled: boolean) {
+    await this.obs.send('SetSourceFilterVisibility', {
+      sourceName: source,
+      filterName: filter,
+      filterEnabled: enabled
+    })
   }
 
   private async getMute(source: string) {
@@ -211,9 +225,10 @@ export default class obsController {
     }
   }
 
-  private async screenshot(source: string) {
+  private async screenshot(screenshot: onRedeemEvent, source: string) {
+    let complete: HelixCustomRewardRedemptionTargetStatus
     try {
-      let filePath: string = `E:\\Pictures\\obs\\${new Date().toISOString().replace(/:/gi, '-')}.png`
+      const filePath = `/images/${ new Date().toISOString().replace(/:/gi, '-') }.png`
 
       const img = await this.obs.send('TakeSourceScreenshot', {
         sourceName: source,
@@ -221,9 +236,26 @@ export default class obsController {
         fileFormat: 'png'
       })
 
-      this.emit(Events.onScreenshot, new onScreenshotEvent(filePath))
+      this.emit(Events.onScreenshot, new onScreenshotEvent(screenshot.user, img.imageFile))
+      complete = 'FULFILLED'
     } catch (err) {
       console.error(err)
+      complete = 'CANCELED'
     }
+
+    this.emit(Events.onRewardComplete, new onRewardCompleteEvent(screenshot.channel, screenshot.rewardId, screenshot.id, complete))
+  }
+
+  private async setSourceVisibility(source: string, visible: boolean) {
+    await this.obs.send('SetSceneItemProperties', {
+      item: {
+        name: source
+      },
+      visible: visible,
+      bounds: null,
+      crop: null,
+      position: null,
+      scale: null,
+    })
   }
 }

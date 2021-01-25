@@ -8,34 +8,35 @@
   },
   "main": "index.js",
   "dependencies": {
-    "axios": "^0.20.0",
-    "discord.js": "^12.4.1",
+    "axios": "^0.21.1",
+    "bufferutil": "^4.0.3",
+    "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
-    "mongoose": "^5.10.13",
     "obs-websocket-js": "^4.0.2",
-    "say": "^0.16.0",
-    "socket.io": "^3.0.1",
-    "socket.io-client": "^3.0.1",
-    "twitch": "^4.2.7",
-    "twitch-auth": "^4.2.7",
-    "twitch-chat-client": "^4.2.7",
-    "twitch-pubsub-client": "^4.2.7"
+    "socket.io": "^3.1.0",
+    "socket.io-client": "^3.1.0",
+    "twitch": "^4.4.2",
+    "twitch-auth": "^4.4.2",
+    "twitch-chat-client": "^4.4.2",
+    "twitch-eventsub": "^4.4.2",
+    "twitch-pubsub-client": "^4.4.2",
+    "utf-8-validate": "^5.0.4"
   },
   "devDependencies": {
-    "@types/express": "^4.17.8",
-    "@types/mongoose": "^5.7.37",
-    "@types/node": "^14.14.7",
-    "typescript": "^4.0.5"
+    "@types/express": "^4.17.11",
+    "@types/node": "^14.14.21",
+    "ts-node": "^9.1.1",
+    "typescript": "^4.1.3"
+  },
+  "optionalDependencies": {
+    "bufferutil": "^4.0.3",
+    "utf-8-validate": "^5.0.4"
   },
   "scripts": {
     "postversion": "git push && git push --tags",
-    "start": "npx tsc && node dist/index.js"
+    "start": "npx ts-node src/index.ts"
   },
   "author": "kuroshiropanda",
-  "license": "SEE LICENSE IN LICENSE",
-  "optionalDependencies": {
-    "bufferutil": "^4.0.1",
-    "utf-8-validate": "^5.0.2"
-  }
+  "license": "SEE LICENSE IN LICENSE"
 }

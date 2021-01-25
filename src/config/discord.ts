@@ -5,6 +5,7 @@ declare let process: {
     DISCORD_CALLBACK_URI: string
     DISCORD_PUBLIC_KEY: string
     DISCORD_BOT_TOKEN: string
+    DISCORD_CHANNEL_LIVE: string
     DISCORD_CHANNEL_CHAT: string
     DISCORD_CHANNEL_SCREENSHOT: string
     DISCORD_CHANNEL_CLIP: string
@@ -18,6 +19,7 @@ interface clientObj {
   publicKey: string
   botToken: string
   channels: {
+    live: string
     chat: string
     screenshot: string
     clip: string
@@ -31,6 +33,7 @@ export const discord: clientObj = {
   publicKey: process.env.DISCORD_PUBLIC_KEY,
   botToken: process.env.DISCORD_BOT_TOKEN,
   channels: {
+    live: process.env.DISCORD_CHANNEL_LIVE,
     chat: process.env.DISCORD_CHANNEL_CHAT,
     screenshot: process.env.DISCORD_CHANNEL_SCREENSHOT,
     clip: process.env.DISCORD_CHANNEL_CLIP

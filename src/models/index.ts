@@ -12,6 +12,14 @@ import { onCommandEvent } from './onCommandEvent'
 import { onScreenshotEvent } from './onScreenshotEvent'
 import { onClipEvent } from './onClipEvent'
 import { onCreateClipEvent } from './onCreateClipEvent'
+import { onHostEvent } from './onHostEvent'
+import { onRaidEvent } from './onRaidEvent'
+import { onPostClipEvent } from './onPostClipEvent'
+import { onStreamLiveEvent } from './onStreamLiveEvent'
+import { toPostLiveEvent } from './toPostLiveEvent'
+import { onRewardCompleteEvent } from './onRewardCompleteEvent'
+import { onStreamOfflineEvent } from './onStreamOfflineEvent'
+import { onGetGameEvent } from './onGetGameEvent'
 
 export {
   onChatEvent,
@@ -27,5 +35,13 @@ export {
   onCommandEvent,
   onScreenshotEvent,
   onClipEvent,
-  onCreateClipEvent
+  onCreateClipEvent,
+  onHostEvent,
+  onRaidEvent,
+  onPostClipEvent,
+  onStreamLiveEvent,
+  toPostLiveEvent,
+  onRewardCompleteEvent,
+  onStreamOfflineEvent,
+  onGetGameEvent
 }
