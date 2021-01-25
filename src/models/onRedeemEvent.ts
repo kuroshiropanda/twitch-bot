@@ -1,7 +1,32 @@
 import { PubSubRedemptionMessage } from 'twitch-pubsub-client/lib'
 
 export class onRedeemEvent {
-  constructor(
-    public reward: PubSubRedemptionMessage
-  ) {}
+  private _data: PubSubRedemptionMessage
+  constructor(_data: PubSubRedemptionMessage) {
+    this._data = _data
+  }
+
+  get id(): string {
+    return this._data.id
+  }
+
+  get rewardId(): string {
+    return this._data.rewardId
+  }
+
+  get channel(): string {
+    return this._data.channelId
+  }
+
+  get rewardName(): string {
+    return this._data.rewardName
+  }
+
+  get user(): string {
+    return this._data.userName
+  }
+
+  get message(): string {
+    return this._data.message
+  }
 }

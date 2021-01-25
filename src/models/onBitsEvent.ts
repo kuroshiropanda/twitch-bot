@@ -1,7 +1,20 @@
 import { PubSubBitsMessage } from 'twitch-pubsub-client/lib'
 
 export class onBitsEvent {
-  constructor(
-    public bit: PubSubBitsMessage
-  ) {}
+  private readonly _data: PubSubBitsMessage
+  constructor(_data: PubSubBitsMessage) {
+    this._data = _data
+  }
+
+  get bits() {
+    return this._data.bits
+  }
+
+  get user() {
+    return this._data.userName
+  }
+
+  get message() {
+    return this._data.message
+  }
 }
