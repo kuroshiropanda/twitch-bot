@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { Manager } from 'socket.io-client'
+import fs, { promises as fsp } from 'fs'
 
 import { streamlabs } from '../../config'
 import { onDonateEvent, onOutroEvent } from '../../models'
@@ -11,7 +12,7 @@ export default class Streamlabs {
   private streamlabs: Manager
   private token: string
 
-  constructor(token: string, socket: string) {
+  constructor(socket: string, token: string) {
     this.streamlabs = new Manager('https://sockets.streamlabs.com', {
       transports: ['websocket'],
       query: {
@@ -22,21 +23,24 @@ export default class Streamlabs {
   }
 
   public async init() {
+    this.streamlabs.connect((e) => console.error(e))
+    this.streamlabs.on('connect', () => console.log('Streamlabs socket: connected'))
     this.streamlabs.on('event', (data: donateData) => {
       if (data.type === 'donation') {
         Event.emit(Events.onDonate, new onDonateEvent(data))
       }
     })
 
-    Event.addListener(Events.onOutro, (onOutroEvent: onOutroEvent) => this.endCredits(onOutroEvent))
+    Event.addListener(Events.onOutro, (data: onOutroEvent) => this.endCredits(data))
   }
 
   private async endCredits(event: onOutroEvent) {
     if (event.outro) {
       try {
-        await axios.post('https://streamlabs.com/api/v1.0/credits/roll', {
+        const data = await axios.post('https://streamlabs.com/api/v1.0/credits/roll', {
           access_token: this.token
         })
+        console.log('streamlabs credits: ' + data)
       } catch (err) {
         console.error(err.response.data)
       }
@@ -57,7 +61,7 @@ export default class Streamlabs {
   }
 
   public static async getToken(code: any) {
-    let data: object[] = []
+    const data: object[] = []
     try {
       const token = await axios({
         method: 'POST',
@@ -84,6 +88,19 @@ export default class Streamlabs {
       return err.response
     }
 
+    return data
+  }
+
+  public static async readJSON(file: string) {
+    if (!fs.existsSync(file)) {
+      await fsp.writeFile(file, JSON.stringify({
+        token: '',
+        refreshToken: '',
+        expiry: null
+      }), 'utf-8')
+    }
+
+    const data = JSON.parse(await fsp.readFile(file, { encoding: 'utf-8' }))
     return data
   }
 }
