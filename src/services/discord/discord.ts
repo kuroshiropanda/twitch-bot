@@ -1,8 +1,8 @@
 import Discord, { Client, MessageEmbed, TextChannel } from 'discord.js'
 
-import { discord } from '../../config'
-import { onScreenshotEvent, onClipEvent, onChatEvent, toSayEvent } from '../../models'
-import { getUserPicture } from '../../common'
+import { discord, twitch } from '../../config'
+import { onScreenshotEvent, onClipEvent, onChatEvent, toSayEvent, onStreamLiveEvent, toPostLiveEvent, onRewardCompleteEvent } from '../../models'
+import { getFollowers, getUserPicture } from '../../common'
 import { Event, Events } from '../events'
 
 export default class DiscordHandler {
@@ -30,9 +30,10 @@ export default class DiscordHandler {
 
     this.client.on('message', (msg: Discord.Message) => this.onMessage(msg))
 
-    Event.addListener(Events.onChat, (onChatEvent: onChatEvent) => this.onChat(onChatEvent))
-    Event.addListener(Events.onScreenshot, (onScreenshotEvent: onScreenshotEvent) => this.onScreenshot(onScreenshotEvent))
-    Event.addListener(Events.onClip, (onClipEvent: onClipEvent) => this.onClip(onClipEvent))
+    Event.addListener(Events.toPostLive, (data: toPostLiveEvent) => this.onLive(data))
+    Event.addListener(Events.onChat, (data: onChatEvent) => this.onChat(data))
+    Event.addListener(Events.onScreenshot, (data: onScreenshotEvent) => this.onScreenshot(data))
+    Event.addListener(Events.onClip, (data: onClipEvent) => this.onClip(data))
   }
 
   private emit(event: Events, payload: any) {
@@ -41,43 +42,79 @@ export default class DiscordHandler {
 
   private async onMessage(msg: Discord.Message) {
     if (!msg.author.bot && msg.channel.id === discord.channels.chat) {
-      this.emit(Events.toSay, new toSayEvent(`${msg.author.username}: ${msg.content} sent via Discord`))
+      this.emit(Events.toSay, new toSayEvent(`${ msg.author.username }: ${ msg.content } sent via Discord`))
     }
+  }
+
+  private async onLive(stream: toPostLiveEvent) {
+    const user = await stream.getUser()
+    const game = await stream.getGame()
+    const tags = await stream.getTags()
+    const followers = await getFollowers(user.id)
+    const url = `https://twitch.tv/${ user.name }`
+    const tagsString = tags.length !== 0 ? tags.map(tag => tag.getName('en-us')).join(', ') : 'none'
+
+    const msg = new MessageEmbed()
+      .setColor('#FF0000')
+      .setAuthor(user.displayName, user.profilePictureUrl, url)
+      .setTitle(stream.title)
+      .setDescription(`[click here to watch](${url})`)
+      .setImage(stream.thumbnail)
+      .setThumbnail(game.boxArtUrl.replace('-{width}x{height}', ''))
+      .addField('Playing', game.name)
+      .addField('Viewers', stream.viewers, true)
+      .addField('Followers', followers.total, true)
+      .addField('Subscribers', stream.totalSubs, true)
+      .addField('Current Stream Tags', tagsString)
+      .setFooter('kuroshiropanda is live', user.profilePictureUrl)
+      .setTimestamp(stream.startDate)
+
+    this.sendMsg(discord.channels.live, msg)
   }
 
   private async onChat(chat: onChatEvent) {
-    try {
-      const channel = this.client.channels.cache.get(discord.channels.chat) as TextChannel
-      const msg = new MessageEmbed()
-        .setAuthor(chat.userInfo.displayName, await getUserPicture(chat.user), `https://twitch.tv/${chat.user}`)
-        .setColor(chat.userInfo.color)
-        .setDescription(chat.message)
-        .setTimestamp(new Date())
-      channel.send(msg)
-    } catch (err) {
-      console.error(err)
-    }
+    const msg = new MessageEmbed()
+      .setAuthor(chat.userInfo.displayName, await getUserPicture(chat.user), `https://twitch.tv/${ chat.user }`)
+      .setColor(chat.userInfo.color)
+      .setDescription(chat.message)
+      .setFooter('', await chat.badge())
+      .setTimestamp(new Date())
+    this.sendMsg(discord.channels.chat, msg)
   }
 
-  private async onScreenshot(onScreenshotEvent: onScreenshotEvent) {
-    try {
-      const screenshot = this.client.channels.cache.get(discord.channels.screenshot) as TextChannel
-      screenshot.send({
-        files: [{
-          attachment: onScreenshotEvent.file
-        }]
-      })
-    } catch (err) {
-      console.error(err)
+  private async onScreenshot(screenshot: onScreenshotEvent) {
+    const msg = {
+      content: `screenshot redeemed by **${ screenshot.user }**`,
+      files: [{
+        attachment: screenshot.file
+      }]
     }
+
+    this.sendMsg(discord.channels.screenshot, msg)
   }
 
-  private async onClip(onClipEvent: onClipEvent) {
+  private async onClip(clip: onClipEvent) {
+    const broadcaster = await clip.getBroadcaster()
+    const game = await clip.getGame()
+    const msg = new MessageEmbed()
+      .setImage(clip.thumbnailUrl)
+      .setURL(clip.url)
+      .setTitle(clip.title)
+      .setDescription(clip.url)
+      .setThumbnail(game.boxArtUrl.replace('-{width}x{height}', ''))
+      .addField('Playing', game.name, true)
+      .addField('Clipped by', clip.user, true)
+      .setTimestamp(clip.creationDate)
+      .setFooter(`${broadcaster.name}'s clips`, broadcaster.profilePictureUrl)
+    this.sendMsg(discord.channels.clip, msg)
+  }
+
+  private async sendMsg(channel: string, msg: any) {
     try {
-      const clip = this.client.channels.cache.get(discord.channels.clip) as TextChannel
-      clip.send(onClipEvent.url)
-    } catch (err) {
-      console.error(err)
+      const text = this.client.channels.cache.get(channel) as TextChannel
+      text.send(msg)
+    } catch (e) {
+      console.error(e)
     }
   }
 }
