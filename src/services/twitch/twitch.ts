@@ -1,11 +1,38 @@
 import axios from 'axios'
+import fs, { promises as fsp } from 'fs'
 
 import { twitch } from '../../config/twitch'
-import { User } from '../mongo/mongo'
 
+export interface TokenData {
+  auth: {
+    access_token: string
+    refresh_token: string
+    expires_in: number
+    scope: string[]
+    token_type: string
+  },
+  user: {
+    id: string
+    login: string
+    display_name: string
+    type: string
+    description: string
+    profile_image_url: string
+    offline_image_url: string
+    view_count: number
+    created_at: string
+  }
+}
+
+export interface JSONData {
+  id: string
+  username: string
+  token: string
+  refreshToken: string
+  expiry: number
+}
 export default class Twitch {
-  static async getToken(code: any) {
-    let data: Array<object> = []
+  static async getToken(code: any): Promise<TokenData> {
     try {
       const token = await axios({
         method: 'POST',
@@ -28,11 +55,14 @@ export default class Twitch {
         }
       })
 
-      data.push(token.data, user.data.data[0])
+      const data: TokenData = {
+        auth: token.data,
+        user: user.data.data[0]
+      }
+      return data
     } catch (err) {
       return err
     }
-    return data
   }
 
   static async getAppToken() {
@@ -50,7 +80,16 @@ export default class Twitch {
     return appToken.data.access_token
   }
 
-  static async getUsers() {
-    return (await User.readAll()).map((user: any) => user.username)
+  public static async readJSON(file: string) {
+    if (!fs.existsSync(file)) {
+      await fsp.writeFile(file, JSON.stringify({
+        token: '',
+        refreshToken: '',
+        expiry: null
+      }), 'utf-8')
+    }
+  
+    const data: JSONData = JSON.parse(await fsp.readFile(file, { encoding: 'utf-8' }))
+    return data
   }
 }
