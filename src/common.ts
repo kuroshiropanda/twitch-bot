@@ -97,6 +97,11 @@ const getFollowers = async (user: UserIdResolvable) => {
   return data
 }
 
+const getChannelName = async (id: UserIdResolvable) => {
+  const data = await api.helix.users.getUserById(id)
+  return data.name
+}
+
 export {
   shoutout,
   dance,
@@ -104,5 +109,6 @@ export {
   whatGame,
   getUserPicture,
   getChatInfo,
-  getFollowers
+  getFollowers,
+  getChannelName
 }

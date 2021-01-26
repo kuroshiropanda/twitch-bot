@@ -1,4 +1,5 @@
 import OBSWebSocket from 'obs-websocket-js'
+import { promises as fs } from 'fs'
 
 import { obs, twitch } from '../../config'
 import { onRedeemEvent, onOutroEvent, onScreenshotEvent, onBRBEvent, onHostEvent, onRewardCompleteEvent, onCreateClipEvent } from '../../models'
@@ -45,7 +46,7 @@ export default class OBSController {
       console.error(err)
     }
 
-    this.obs.on('ConnectionClosed', async () => this.obs.disconnect())
+    this.obs.on('ConnectionClosed', () => this.obs.disconnect())
 
     this.obs.on('StreamStarted', () => {
       this.setSourceVisibility('intro songs', true)
@@ -108,7 +109,7 @@ export default class OBSController {
     setTimeout(() => this.setCurrentScene(scene), 12000)
     setTimeout(() => {
       this.freezeVintage(false)
-      this.emit(Events.onRewardComplete, new onRewardCompleteEvent(data.channel, data.rewardId, data.id, 'FULFILLED'))
+      this.rewardComplete(data.channel, data.rewardId, data.id, 'FULFILLED')
     }, 13000)
   }
 
@@ -132,7 +133,7 @@ export default class OBSController {
 
     setTimeout(async () => {
       await this.setMute(AudioDevice.mic, false)
-      this.emit(Events.onRewardComplete, new onRewardCompleteEvent(data.channel, data.rewardId, data.id, 'FULFILLED'))
+      this.rewardComplete(data.channel, data.rewardId, data.id, 'FULFILLED')
     }, 30000)
   }
 
@@ -150,7 +151,7 @@ export default class OBSController {
       await this.obs.send('StopStreaming')
     }, 120 * 1000)
 
-    this.emit(Events.onRewardComplete, new onRewardCompleteEvent(data.channel, data.rewardId, data.id, 'FULFILLED'))
+    this.rewardComplete(data.channel, data.rewardId, data.id, 'FULFILLED')
   }
 
   private stopCancel(data: onRedeemEvent) {
@@ -160,7 +161,7 @@ export default class OBSController {
 
     clearTimeout(this.timeout)
 
-    this.emit(Events.onRewardComplete, new onRewardCompleteEvent(data.channel, data.rewardId, data.id, 'FULFILLED'))
+    this.rewardComplete(data.channel, data.rewardId, data.id, 'FULFILLED')
   }
 
   private async mute() {
@@ -232,18 +233,22 @@ export default class OBSController {
 
       const img = await this.obs.send('TakeSourceScreenshot', {
         sourceName: source,
-        saveToFilePath: filePath,
-        fileFormat: 'png'
+        embedPictureFormat: 'png',
+        compressionQuality: -1,
       })
 
-      this.emit(Events.onScreenshot, new onScreenshotEvent(screenshot.user, img.imageFile))
+      const image = img.img.replace(/^data:image\/png;base64,/, '')
+      const buffer = Buffer.from(image, 'base64')
+      await fs.writeFile(filePath, buffer, 'base64')
+
+      this.emit(Events.onScreenshot, new onScreenshotEvent(screenshot.user, filePath))
       complete = 'FULFILLED'
     } catch (err) {
-      console.error(err)
+      console.error({ TakeSourceScreenshot: err })
       complete = 'CANCELED'
     }
 
-    this.emit(Events.onRewardComplete, new onRewardCompleteEvent(screenshot.channel, screenshot.rewardId, screenshot.id, complete))
+    this.rewardComplete(screenshot.channel, screenshot.rewardId, screenshot.id, complete)
   }
 
   private async setSourceVisibility(source: string, visible: boolean) {
@@ -257,5 +262,9 @@ export default class OBSController {
       position: null,
       scale: null,
     })
+  }
+
+  private rewardComplete(channelId: string, rewardId: string, redemptionId: string, complete: HelixCustomRewardRedemptionTargetStatus) {
+    this.emit(Events.onRewardComplete, new onRewardCompleteEvent(channelId, rewardId, redemptionId, complete))
   }
 }

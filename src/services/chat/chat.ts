@@ -5,7 +5,7 @@ import { TwitchPrivateMessage } from 'twitch-chat-client/lib/StandardCommands/Tw
 import { UserNotice } from 'twitch-chat-client/lib/Capabilities/TwitchCommandsCapability/MessageTypes/UserNotice'
 
 import { twitch } from '../../config'
-import { dance, shoutout, getChatInfo } from '../../common'
+import { dance, shoutout, getChatInfo, getChannelName } from '../../common'
 import { Event, Events } from '../events'
 import { Rewards } from '../pubsub'
 import { Commands } from './commands'
@@ -165,7 +165,7 @@ export default class Chat {
   private onChannelRedeem(redeem: onRedeemEvent) {
     switch (redeem.rewardId) {
       case Rewards.ad:
-        this.chat.runCommercial(this.channel, 30)
+        this.runAd(30, redeem)
         break
       case Rewards.changeTitle:
         this.sendChat(`!settitle ${ redeem.message }`, redeem)
@@ -177,7 +177,7 @@ export default class Chat {
         this.sendChat(`thanks to ${ redeem.user } for cancelling the stop stream reward`)
         break
       case Rewards.emoteOnly:
-        this.emoteOnlyReward()
+        this.emoteOnlyReward(redeem)
         break
       case Rewards.screenshot:
         this.sendChat(`@${ redeem.user } screenshot saved on discord you can check it out on the #screenshots channel on discord`)
@@ -209,10 +209,14 @@ export default class Chat {
     }
   }
 
-  private async emoteOnlyReward() {
-    await this.chat.enableEmoteOnly(this.channel)
+  private async emoteOnlyReward(data: onRedeemEvent) {
+    const channel = await getChannelName(data.channel)
+    await this.chat.enableEmoteOnly(channel)
 
-    setTimeout(async () => await this.chat.disableEmoteOnly(this.channel), 120 * 1000)
+    setTimeout(async () => {
+      await this.chat.disableEmoteOnly(channel)
+      this.rewardComplete(data.channel, data.rewardId, data.id, 'FULFILLED')
+    }, 120 * 1000)
   }
 
   private async sendChat(msg: string, event?: onRedeemEvent) {
@@ -244,7 +248,7 @@ export default class Chat {
   private async timeoutUser(timeout: onRedeemEvent) {
     let complete: HelixCustomRewardRedemptionTargetStatus
     try {
-      await this.chat.timeout(this.channel, timeout.message, 180, `${ timeout.user } redeemed ${ timeout.rewardName }`)
+      await this.chat.timeout(timeout.channel, timeout.message, 180, `${ timeout.user } redeemed ${ timeout.rewardName }`)
       complete = 'FULFILLED'
     } catch (e) {
       console.error(e)

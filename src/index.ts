@@ -1,5 +1,7 @@
 import dotenv from 'dotenv'
-dotenv.config()
+import dotenvExpand from 'dotenv-expand'
+const env = dotenv.config()
+dotenvExpand(env)
 
 import { promises as fs } from 'fs'
 import http from 'http'
@@ -25,6 +27,8 @@ import Bot from './bot'
 import Steam from './services/steam'
 
 (async () => {
+  const reverseProxy = process.env.APP_URL
+  const proxyPath = process.env.APP_PATH
 
   const app = express()
   const server = http.createServer(app)
@@ -46,7 +50,7 @@ import Steam from './services/steam'
       const chat = new Chat(bot.AuthProvider())
       await chat.init()
     } else {
-      const url = `http://localhost:3000/bot/login`
+      const url = `${reverseProxy}${proxyPath}/bot/login`
       console.info(`open this on your browser: ${ url }`)
     }
   }
@@ -63,7 +67,7 @@ import Steam from './services/steam'
       await pubsub.init()
       await eventsub.init()
     } else {
-      const url = `http://localhost:3000/login`
+      const url = `${reverseProxy}${proxyPath}/login`
       console.info(`open this on your browser: ${ url }`)
     }
   }
@@ -83,34 +87,34 @@ import Steam from './services/steam'
 
   const port = 3000
 
-  app.use('/', express.static('resources/views/index'))
-  app.use('/clips', express.static('resources/views/clips'))
-  app.use('/so', express.static('resources/views/shoutout'))
-  app.use('/niconico', express.static('resources/views/niconico'))
+  app.use(`${proxyPath}/`, express.static('resources/views/index'))
+  app.use(`${proxyPath}/clips`, express.static('resources/views/clips'))
+  app.use(`${proxyPath}/so`, express.static('resources/views/shoutout'))
+  app.use(`${proxyPath}/niconico`, express.static('resources/views/niconico'))
 
-  app.get('/obs/connect', async (req, res) => {
+  app.get(`${proxyPath}/obs/connect`, async (req, res) => {
     obsFunction()
     res.send('obs: connected')
   })
 
-  app.get('/bot/login', (req, res) => {
+  app.get(`${proxyPath}/bot/login`, (req, res) => {
     const url = `https://id.twitch.tv/oauth2/authorize?client_id=${ twitch.clientId }&redirect_uri=${ twitch.redirectURI }&response_type=code&scope=${ twitch.botScopes.join(' ') }&force_verify=true`
     res.redirect(url)
   })
 
-  app.get('/login', (req, res) => {
+  app.get(`${proxyPath}/login`, (req, res) => {
     const url = `https://id.twitch.tv/oauth2/authorize?client_id=${ twitch.clientId }&redirect_uri=${ twitch.redirectURI }&response_type=code&scope=${ twitch.scopes.join(' ') }&force_verify=true`
     res.redirect(url)
   })
 
-  app.get('/streamlabs', (req, res) => {
+  app.get(`${proxyPath}/streamlabs`, (req, res) => {
     const url = `https://streamlabs.com/api/v1.0/authorize?response_type=code&client_id=${ streamlabs.clientId }&redirect_uri=${ streamlabs.redirectURI }&scope=${ streamlabs.scopes.join('+') }`
     res.redirect(url)
   })
 
-  app.get('/callback', async (req, res) => {
+  app.get(`${proxyPath}/callback`, async (req, res) => {
     const data = await Twitch.getToken(req.query.code)
-    if (data.auth.scope.length <= 8) {
+    if (data.auth.scope.length <= 10) {
       const bot = new Bot()
       bot.id = data.user.id
       bot.username = data.user.login
@@ -131,11 +135,11 @@ import Steam from './services/steam'
       const save = await user.save()
 
       if (save) userFunction()
-      res.redirect('/streamlabs')
+      res.redirect(`${proxyPath}/streamlabs`)
     }
   })
 
-  app.get('/streamlabs/callback', async (req, res) => {
+  app.get(`${proxyPath}/streamlabs/callback`, async (req, res) => {
     const data = await Streamlabs.getToken(req.query.code)
     const file = {
       token: data[0].access_token,
@@ -149,12 +153,12 @@ import Steam from './services/steam'
     res.json(data)
   })
 
-  app.get('/clip/:user/:cursor', async (req, res) => {
+  app.get(`${proxyPath}/clip/:user/:cursor`, async (req, res) => {
     const clips = await BRB(req.params.user, req.params.cursor)
     res.json(clips)
   })
 
-  app.get('/update/steam', async (req, res) => {
+  app.get(`${proxyPath}/update/steam`, async (req, res) => {
     const steam = await Steam.updateJSON()
     res.send(steam)
   })

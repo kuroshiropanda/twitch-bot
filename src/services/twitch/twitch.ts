@@ -51,7 +51,7 @@ export default class Twitch {
         url: 'https://api.twitch.tv/helix/users',
         headers: {
           'Client-ID': twitch.clientId,
-          'Authorization': `Bearer ${token.data.access_token}`
+          'Authorization': `Bearer ${ token.data.access_token }`
         }
       })
 
@@ -88,7 +88,7 @@ export default class Twitch {
         expiry: null
       }), 'utf-8')
     }
-  
+
     const data: JSONData = JSON.parse(await fsp.readFile(file, { encoding: 'utf-8' }))
     return data
   }

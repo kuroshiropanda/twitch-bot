@@ -97,7 +97,6 @@ export default class ApiHandler {
   }
 
   private async onRewardComplete(data: onRewardCompleteEvent) {
-    console.log(`[ ${data.rewardId} ] < ${data.redemptionId} >: ${data.complete}`)
     await this.api.helix.channelPoints.updateRedemptionStatusByIds(data.channelId, data.rewardId, [data.redemptionId], data.complete)
   }
 

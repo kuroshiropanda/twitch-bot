@@ -23,7 +23,7 @@ export default class EventSub {
 
   constructor(userId: UserIdResolvable) {
     this.adapter = new ReverseProxyAdapter({
-      hostName: process.env.REVERSE_PROXY
+      hostName: process.env.DOMAIN
     })
 
     this.config = {
@@ -101,14 +101,14 @@ export default class EventSub {
     const user = await data.getUser()
     let msg: string
     switch(data.status) {
-      case 'FULFILLED':
+      case 'fulfilled':
         msg = `${data.rewardTitle} has been successfully redeemed, @${user.name} your points are spent and cannot be refunded back`
         break
-      case 'CANCELLED':
+      case 'canceled':
         msg = `${data.rewardTitle} has failed, @${user.name} your points have been refunded`
         break
       default:
-        msg = `${data.rewardTitle} has failed, @${user.name} your points have been refunded`
+        msg = `I don't know what I'm doing.`
         break
     }
 
