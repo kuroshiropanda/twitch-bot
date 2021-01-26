@@ -14,9 +14,13 @@ export default class OBSController {
   private obs: OBSWebSocket
   private currentScene: string
   private stopStream: any
+  private _connected: boolean
 
   constructor() {
-    this.obs = new OBSWebSocket()
+    this.obs = new OBSWebSocket({ captureRejections: true })
+    this.connected = false
+
+    Event.addListener(Events.onChannelRedeem, (data: onRedeemEvent) => this.onRedeem(data))
   }
 
   private get scene() {
@@ -35,30 +39,47 @@ export default class OBSController {
     this.stopStream = x
   }
 
+  private get connected() {
+    return this._connected
+  }
+
+  private set connected(connected: boolean) {
+    this._connected = connected
+  }
+
   public async connect() {
-    try {
-      await this.obs.connect({
-        address: obs.address,
-        password: obs.password
-      })
-      console.log('OBSWEBSocket: connected')
-    } catch (err) {
-      console.error(err)
+    if (!this.connected || this.connected === undefined) {
+      try {
+        await this.obs.connect({
+          address: obs.address,
+          password: obs.password
+        })
+        this.connected = true
+        console.log('OBSWEBSocket: connected ' + this.connected)
+      } catch (err) {
+        console.error(err)
+      }
+
+      this.obs.on('ConnectionClosed', () => this.disconnect())
+      this.obs.on('StreamStarted', () => this.started())
+      this.obs.on('SwitchScenes', (data: any) => this.onChangeScene(data.sceneName))
     }
-
-    this.obs.on('ConnectionClosed', () => this.obs.disconnect())
-
-    this.obs.on('StreamStarted', () => {
-      this.setSourceVisibility('intro songs', true)
-      this.setSourceVisibility('start websocket', false)
-    })
-    this.obs.on('SwitchScenes', (data: any) => this.onChangeScene(data.sceneName))
-
-    Event.addListener(Events.onChannelRedeem, (data: onRedeemEvent) => this.onRedeem(data))
   }
 
   private emit(event: Events, payload?: any) {
     Event.emit(event, payload)
+  }
+
+  private async disconnect() {
+    this.obs.disconnect()
+    this.obs.removeAllListeners()
+    this.connected = false
+    console.log('obs disconnected ' + this.connected)
+  }
+
+  private async started() {
+    this.setSourceVisibility('intro songs', true)
+    this.setSourceVisibility('start websocket', false)
   }
 
   private async onChangeScene(scene: string) {

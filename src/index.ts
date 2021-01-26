@@ -34,12 +34,12 @@ import Steam from './services/steam'
   const server = http.createServer(app)
   const discord = new DiscordHandler()
   const io = new EventHandler(server)
+  const obs = new OBSController()
 
   await discord.init()
   await io.init()
 
   const obsFunction = async () => {
-    const obs = new OBSController()
     await obs.connect()
   }
 
