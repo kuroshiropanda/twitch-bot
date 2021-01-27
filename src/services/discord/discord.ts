@@ -56,9 +56,8 @@ export default class DiscordHandler {
 
     const msg = new MessageEmbed()
       .setColor('#FF0000')
-      .setAuthor(user.displayName, user.profilePictureUrl, url)
       .setTitle(stream.title)
-      .setDescription(`[click here to watch](${url})`)
+      .setDescription(`**${user.name}** is live [click here to watch](${url})`)
       .setImage(stream.thumbnail)
       .setThumbnail(game.boxArtUrl.replace('-{width}x{height}', ''))
       .addField('Playing', game.name)
@@ -66,7 +65,7 @@ export default class DiscordHandler {
       .addField('Followers', followers.total, true)
       .addField('Subscribers', stream.totalSubs, true)
       .addField('Current Stream Tags', tagsString)
-      .setFooter('kuroshiropanda is live', user.profilePictureUrl)
+      .setFooter(`${user.name} is live`, user.profilePictureUrl)
       .setTimestamp(stream.startDate)
 
     this.sendMsg(discord.channels.live, msg)
