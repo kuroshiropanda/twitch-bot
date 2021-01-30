@@ -1,6 +1,6 @@
 {
   "name": "twitch-bot",
-  "version": "2.1.3",
+  "version": "2.2.0",
   "description": "A custom made twitch bot for my channel",
   "repository": {
     "type": "git",
