@@ -78,7 +78,7 @@ export default class EventSub {
   }
 
   private async onFollow(data: EventSubChannelFollowEvent) {
-    console.log(`${data.userName}[${data.userId}] just followed ${data.broadcasterName}[${data.broadcasterId}]`)
+    this.emit(Events.toSay, new toSayEvent(`wow! thanks for following ${data.userName}`))
   }
 
   private async hypeTrainBegin(data: EventSubChannelHypeTrainBeginEvent) {

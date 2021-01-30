@@ -13,11 +13,22 @@ interface clipObject {
   clip: string
 }
 
-const getClips = async (name: string, limit = 50, cursor?: string) => {
+const getClips = async (name: string, limit: number = 50, date?: { start?: string, end?: string }) => {
   try {
-    const user = await api.kraken.users.getUserByName(name)
-    const clips = await api.helix.clips.getClipsForBroadcaster(user.id, {
-      limit: limit
+    let startDate: string
+    let endDate: string
+    if (date === undefined) {
+      startDate = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString()
+      endDate = new Date().toISOString()
+    } else {
+      startDate = date.start
+      endDate = date.end
+    }
+    const user = await api.helix.users.getUserByName(name)
+    const clips = await api.helix.clips.getClipsForBroadcaster(user, {
+      startDate,
+      endDate,
+      limit
     })
 
     return clips.data
@@ -55,30 +66,7 @@ const shoutout = async (user: string) => {
   }
 }
 
-const BRB = async (user: any, cursor: string) => {
-  try {
-    const clips = await getClips(user, 100, cursor)
-    let clipArr: clipObject[]
-
-    for (const clip of clips) {
-      clipArr.push({
-        title: clip.title,
-        clip: thumbnailToUrl(clip.thumbnailUrl, '360')
-      })
-    }
-
-    return clipArr
-  } catch (err) {
-    return err
-  }
-}
-
 const dance = (multiplier = 1) => Math.random() < (0.25 * multiplier)
-
-const whatGame = async (channel: string) => {
-  const user = await api.kraken.channels.getChannel(channel)
-  return user.game
-}
 
 const getUserPicture = async (user: string) => {
   const data = await api.helix.users.getUserByName(user)
@@ -105,8 +93,6 @@ const getChannelName = async (id: UserIdResolvable) => {
 export {
   shoutout,
   dance,
-  BRB,
-  whatGame,
   getUserPicture,
   getChatInfo,
   getFollowers,

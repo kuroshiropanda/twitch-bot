@@ -21,10 +21,10 @@ import OBSController from './services/obs'
 import Streamlabs from './services/streamlabs'
 import { EventHandler } from './services/events'
 
-import { BRB } from './common'
 import User from './user'
 import Bot from './bot'
 import Steam from './services/steam'
+import ErrorHandling from './services/error/error'
 
 (async () => {
   const reverseProxy = process.env.APP_URL
@@ -35,6 +35,7 @@ import Steam from './services/steam'
   const discord = new DiscordHandler()
   const io = new EventHandler(server)
   const obs = new OBSController()
+  new ErrorHandling()
 
   await discord.init()
   await io.init()
@@ -87,10 +88,7 @@ import Steam from './services/steam'
 
   const port = 3000
 
-  app.use(`${proxyPath}/`, express.static('resources/views/index'))
-  app.use(`${proxyPath}/clips`, express.static('resources/views/clips'))
   app.use(`${proxyPath}/so`, express.static('resources/views/shoutout'))
-  app.use(`${proxyPath}/niconico`, express.static('resources/views/niconico'))
 
   app.get(`${proxyPath}/obs/connect`, async (req, res) => {
     obsFunction()
@@ -151,11 +149,6 @@ import Steam from './services/steam'
 
     streamlabsFunction()
     res.json(data)
-  })
-
-  app.get(`${proxyPath}/clip/:user/:cursor`, async (req, res) => {
-    const clips = await BRB(req.params.user, req.params.cursor)
-    res.json(clips)
   })
 
   app.get(`${proxyPath}/update/steam`, async (req, res) => {

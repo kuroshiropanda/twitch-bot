@@ -8,6 +8,8 @@
 + donation overlay like youtube's super chat
 + automatically stop obs upon hosting/raiding
 + make the bot.ts and user.ts DRY
++ error handler
++ logs
 + ~~event handler for obs~~
 + ~~shoutout with clip on screen~~
 + ~~auto shoutout for hosters/raiders~~
