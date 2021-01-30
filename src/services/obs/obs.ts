@@ -2,12 +2,24 @@ import OBSWebSocket from 'obs-websocket-js'
 import { promises as fs } from 'fs'
 
 import { obs, twitch } from '../../config'
-import { onRedeemEvent, onOutroEvent, onScreenshotEvent, onBRBEvent, onHostEvent, onRewardCompleteEvent, onCreateClipEvent } from '../../models'
+import { onRedeemEvent, onOutroEvent, onScreenshotEvent, onBRBEvent, onHostEvent, onRewardCompleteEvent, onCreateClipEvent, toUpdateRewardEvent } from '../../models'
 import { Rewards } from '../pubsub'
 import { Event, Events } from '../events'
 import { Scenes } from './scenes'
 import { AudioDevice } from './audio'
 import { HelixCustomRewardRedemptionTargetStatus } from 'twitch/lib'
+
+export interface SwitchScenesData {
+  'scene-name': string
+  sources: OBSWebSocket.SceneItem[]
+}
+
+export interface SceneItemVisibilityChangedData {
+  'scene-name': string
+  'item-name': string
+  'item-id': number
+  'item-visible': boolean
+}
 
 export default class OBSController {
 
@@ -15,10 +27,12 @@ export default class OBSController {
   private currentScene: string
   private stopStream: any
   private _connected: boolean
+  private _user: string
 
   constructor() {
     this.obs = new OBSWebSocket({ captureRejections: true })
     this.connected = false
+    this._user = twitch.channel
 
     Event.addListener(Events.onChannelRedeem, (data: onRedeemEvent) => this.onRedeem(data))
   }
@@ -62,7 +76,8 @@ export default class OBSController {
 
       this.obs.on('ConnectionClosed', () => this.disconnect())
       this.obs.on('StreamStarted', () => this.started())
-      this.obs.on('SwitchScenes', (data: any) => this.onChangeScene(data.sceneName))
+      this.obs.on('SwitchScenes', (data: SwitchScenesData) => this.onChangeScene(data['scene-name']))
+      this.obs.on('SceneItemVisibilityChanged', (data: SceneItemVisibilityChangedData) => this.onItemVisibilityChange(data))
     }
   }
 
@@ -94,6 +109,13 @@ export default class OBSController {
       default:
         this.unmute()
         break
+    }
+  }
+
+  private async onItemVisibilityChange(data: SceneItemVisibilityChangedData) {
+    if (data['scene-name'] === Scenes.IRL && data['item-name'] === 'webcam') {
+      const enable = data['item-visible']
+      this.emit(Events.toUpdateReward, new toUpdateRewardEvent(data, this._user, [Rewards.toBeContinued, Rewards.timeWarp], { isEnabled: enable }))
     }
   }
 

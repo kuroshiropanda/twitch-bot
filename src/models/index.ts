@@ -20,6 +20,7 @@ import { toPostLiveEvent } from './toPostLiveEvent'
 import { onRewardCompleteEvent } from './onRewardCompleteEvent'
 import { onStreamOfflineEvent } from './onStreamOfflineEvent'
 import { onGetGameEvent } from './onGetGameEvent'
+import { toUpdateRewardEvent } from './toUpdateRewardEvent'
 
 export {
   onChatEvent,
@@ -43,5 +44,6 @@ export {
   toPostLiveEvent,
   onRewardCompleteEvent,
   onStreamOfflineEvent,
-  onGetGameEvent
+  onGetGameEvent,
+  toUpdateRewardEvent
 }

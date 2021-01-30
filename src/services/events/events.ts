@@ -20,5 +20,6 @@ export enum Events {
   onStreamOffline = 'onStreamOffline',
   toPostLive = 'toPostLive',
   onRewardComplete = 'onRewardComplete',
-  onGetGame = 'onGetGame'
+  onGetGame = 'onGetGame',
+  toUpdateReward = 'toUpdateReward'
 }
