@@ -53,13 +53,14 @@ export default class DiscordHandler {
     const followers = await getFollowers(user.id)
     const url = `https://twitch.tv/${ user.name }`
     const tagsString = tags.length !== 0 ? tags.map(tag => tag.getName('en-us')).join(', ') : 'none'
+    const gameThumbnail = game !== null ? game.boxArtUrl.replace('-{width}x{height}', '') : 'https://static-cdn.jtvnw.net/ttv-static/404_boxart.jpg'
 
     const msg = new MessageEmbed()
       .setColor('#FF0000')
       .setTitle(stream.title)
       .setDescription(`**${user.name}** is live [click here to watch](${url})`)
       .setImage(stream.thumbnail)
-      .setThumbnail(game.boxArtUrl.replace('-{width}x{height}', ''))
+      .setThumbnail(gameThumbnail)
       .addField('Playing', game.name)
       .addField('Viewers', stream.viewers, true)
       .addField('Followers', followers.total, true)
