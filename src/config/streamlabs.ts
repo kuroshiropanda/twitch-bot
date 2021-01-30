@@ -25,6 +25,7 @@ export const streamlabs: SLObject = {
     'points.read',
     'points.write',
     'alerts.write',
-    'credits.write'
+    'credits.write',
+    'wheel.write'
   ]
 }

@@ -1,4 +1,4 @@
-import axios from 'axios'
+import axios, { AxiosInstance } from 'axios'
 import { Manager } from 'socket.io-client'
 import fs, { promises as fsp } from 'fs'
 
@@ -10,6 +10,7 @@ import { donateData } from './donate'
 export default class Streamlabs {
 
   private streamlabs: Manager
+  private axios: AxiosInstance
   private token: string
 
   constructor(socket: string, token: string) {
@@ -20,6 +21,10 @@ export default class Streamlabs {
       }
     })
     this.token = token
+
+    this.axios = axios.create({
+      baseURL: 'https://streamlabs.com/api/v1.0/'
+    })
   }
 
   public async init() {
@@ -37,26 +42,11 @@ export default class Streamlabs {
   private async endCredits(event: onOutroEvent) {
     if (event.outro) {
       try {
-        const data = await axios.post('https://streamlabs.com/api/v1.0/credits/roll', {
-          access_token: this.token
-        })
-        console.log('streamlabs credits: ' + data)
+        const data = await this.axios.post('credits/roll', { access_token: this.token })
+        console.info('streamlabs credits: ', data)
       } catch (err) {
-        console.error(err.response.data)
+        console.error(err.response)
       }
-    }
-  }
-
-  private async alerts() {
-    try {
-      await axios.post('https://streamlabs.com/api/v1.0/alerts', {
-        access_token: this.token,
-        type: 'donation',
-        message: 'Test alert',
-        duration: '8000'
-      })
-    } catch (err) {
-      console.error(err.response)
     }
   }
 
