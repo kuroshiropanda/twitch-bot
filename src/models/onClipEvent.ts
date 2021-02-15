@@ -1,4 +1,4 @@
-import { HelixClip } from 'twitch/lib'
+import { HelixClip, HelixGame, HelixUser } from 'twitch/lib'
 
 export class onClipEvent {
   private readonly _data: HelixClip
@@ -37,11 +37,11 @@ export class onClipEvent {
     return this._data.creationDate
   }
 
-  async getBroadcaster() {
+  async getBroadcaster(): Promise<HelixUser> {
     return await this._data.getBroadcaster()
   }
 
-  async getGame() {
+  async getGame(): Promise<HelixGame> {
     return await this._data.getGame()
   }
 }

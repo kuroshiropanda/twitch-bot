@@ -1,5 +1,5 @@
 import { HelixUpdateCustomRewardData } from 'twitch/lib'
-import { SceneItemVisibilityChangedData } from '../services/obs'
+import { SceneItemVisibilityChangedData } from '@obs'
 
 export class toUpdateRewardEvent {
   private readonly _data: SceneItemVisibilityChangedData
