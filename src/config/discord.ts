@@ -1,18 +1,4 @@
-declare let process: {
-  env: {
-    DISCORD_CLIENT_ID: string
-    DISCORD_CLIENT_SECRET: string
-    DISCORD_CALLBACK_URI: string
-    DISCORD_PUBLIC_KEY: string
-    DISCORD_BOT_TOKEN: string
-    DISCORD_CHANNEL_LIVE: string
-    DISCORD_CHANNEL_CHAT: string
-    DISCORD_CHANNEL_SCREENSHOT: string
-    DISCORD_CHANNEL_CLIP: string
-  }
-}
-
-interface clientObj {
+export type discordConfig = {
   clientId: string
   clientSecret: string
   redirectURI: string
@@ -26,7 +12,7 @@ interface clientObj {
   }
 }
 
-export const discord: clientObj = {
+export const discord: discordConfig = {
   clientId: process.env.DISCORD_CLIENT_ID,
   clientSecret: process.env.DISCORD_CLIENT_SECRET,
   redirectURI: process.env.DISCORD_CALLBACK_URI,

@@ -1,19 +1,11 @@
-declare let process: {
-  env: {
-    SL_CLIENT_ID: string
-    SL_CLIENT_SECRET: string
-    SL_CALLBACK_URI: string
-  }
-}
-
-interface SLObject {
+export type streamlabsConfig = {
   clientId: string
   clientSecret: string
   redirectURI: string
   scopes: string[]
 }
 
-export const streamlabs: SLObject = {
+export const streamlabs: streamlabsConfig = {
   clientId: process.env.SL_CLIENT_ID,
   clientSecret: process.env.SL_CLIENT_SECRET,
   redirectURI: process.env.SL_CALLBACK_URI,
