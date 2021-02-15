@@ -1,9 +1,9 @@
 import axios from 'axios'
 import fs, { promises as fsp } from 'fs'
 
-import { twitch } from '../../config/twitch'
+import { twitch } from '@config'
 
-export interface TokenData {
+export type TokenData = {
   auth: {
     access_token: string
     refresh_token: string
@@ -24,45 +24,42 @@ export interface TokenData {
   }
 }
 
-export interface JSONData {
+export type JSONData = {
   id: string
   username: string
   token: string
   refreshToken: string
   expiry: number
 }
-export default class Twitch {
+
+export class Twitch {
   static async getToken(code: any): Promise<TokenData> {
-    try {
-      const token = await axios({
-        method: 'POST',
-        url: 'https://id.twitch.tv/oauth2/token',
-        params: {
-          client_id: twitch.clientId,
-          client_secret: twitch.clientSecret,
-          code: code,
-          grant_type: 'authorization_code',
-          redirect_uri: twitch.redirectURI
-        }
-      })
-
-      const user = await axios({
-        method: 'GET',
-        url: 'https://api.twitch.tv/helix/users',
-        headers: {
-          'Client-ID': twitch.clientId,
-          'Authorization': `Bearer ${ token.data.access_token }`
-        }
-      })
-
-      const data: TokenData = {
-        auth: token.data,
-        user: user.data.data[0]
+    const token = await axios({
+      method: 'POST',
+      url: 'https://id.twitch.tv/oauth2/token',
+      params: {
+        client_id: twitch.clientId,
+        client_secret: twitch.clientSecret,
+        code: code,
+        grant_type: 'authorization_code',
+        redirect_uri: twitch.redirectURI
       }
-      return data
-    } catch (err) {
-      return err
+    })
+
+    const user = await axios({
+      method: 'GET',
+      url: 'https://api.twitch.tv/helix/users',
+      headers: {
+        'Client-ID': twitch.clientId,
+        'Authorization': `Bearer ${ token.data.access_token }`
+      }
+    })
+
+    const data: TokenData = {
+      auth: token.data,
+      user: user.data.data[0]
     }
+    return data
   }
 
   static async getAppToken() {

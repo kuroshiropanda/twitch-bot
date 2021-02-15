@@ -1,11 +1,15 @@
 import { ApiClient } from 'twitch'
 import { PubSubBitsMessage, PubSubClient, PubSubRedemptionMessage, PubSubSubscriptionMessage } from 'twitch-pubsub-client'
 
-import { twitch } from '../../config'
-import { onRedeemEvent, onSubEvent, onBitsEvent } from '../../models'
-import { Event, Events } from '../events'
+import { twitch } from '@config'
+import { Event, Events } from '@events'
+import {
+  onRedeemEvent,
+  onSubEvent,
+  onBitsEvent
+} from '@models'
 
-export default class PubSub {
+export class PubSub {
 
   private api: ApiClient
   private pubsub: PubSubClient
@@ -18,12 +22,8 @@ export default class PubSub {
   }
 
   public async init() {
-    try {
-      await this.pubsub.registerUserListener(this.api, this.channel)
-      console.log('PubSub: connected')
-    } catch (err) {
-      console.error(err)
-    }
+    const reg = await this.pubsub.registerUserListener(this.api, this.channel)
+    console.log('PubSub:', reg)
 
     this.pubsub.onRedemption(this.channel, (msg: PubSubRedemptionMessage) => this.onRedeem(msg))
     this.pubsub.onSubscription(this.channel, (msg: PubSubSubscriptionMessage) => this.onSub(msg))

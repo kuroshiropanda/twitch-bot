@@ -1,15 +1,15 @@
 import { AuthProvider } from 'twitch-auth'
 import { ChatClient, ChatRaidInfo } from 'twitch-chat-client'
-import { ChatClientOptions } from 'twitch-chat-client/lib/ChatClient'
-import { TwitchPrivateMessage } from 'twitch-chat-client/lib/StandardCommands/TwitchPrivateMessage'
-import { UserNotice } from 'twitch-chat-client/lib/Capabilities/TwitchCommandsCapability/MessageTypes/UserNotice'
-
-import { twitch } from '../../config'
-import { dance, shoutout, getChatInfo, getChannelName } from '../../common'
-import { Event, Events } from '../events'
-import { Rewards } from '../pubsub'
-import { Commands } from './commands'
 import { CommercialLength, HelixCustomRewardRedemptionTargetStatus } from 'twitch/lib'
+import { ChatClientOptions } from 'twitch-chat-client/lib/ChatClient'
+import { PrivateMessage, UserNotice } from 'twitch-chat-client/lib'
+
+import { Commands } from './commands'
+
+import { twitch } from '@config'
+import { dance, shoutout, getChatInfo, getChannelName } from 'common'
+import { Event, Events } from '@events'
+import { Rewards } from './rewards'
 import {
   onBitsEvent,
   onChatEvent,
@@ -21,13 +21,12 @@ import {
   onSetGameEvent,
   onCreateClipEvent,
   onBRBEvent,
-  onHostEvent,
-  onRaidEvent,
   onRewardCompleteEvent,
   onGetGameEvent
-} from '../../models'
+} from '@models'
+import { Logger } from '@logger'
 
-export default class Chat {
+export class Chat {
 
   private chat: ChatClient
   private opts: ChatClientOptions
@@ -51,29 +50,23 @@ export default class Chat {
   }
 
   public async init() {
-    try {
-      await this.chat.connect()
-      console.log('Chat Bot: connected', this.channel)
-    } catch (err) {
-      console.error(err)
-    }
+    await this.chat.connect()
 
-    this.chat.onConnect(() => this.chat.action(this.channel, 'chat connected'))
     this.chat.onRegister(() => this.chat.action(this.channel, 'chat connected'))
-    this.chat.onMessage((channel: string, user: string, message: string, msg: TwitchPrivateMessage) => this.onChat(channel, user, message, msg))
+    this.chat.onMessage((channel: string, user: string, message: string, msg: PrivateMessage) => this.onChat(channel, user, message, msg))
     this.chat.onRaid((channel: string, user: string, raidInfo: ChatRaidInfo, msg: UserNotice) => this.onRaid(channel, user, raidInfo, msg))
     this.chat.onHosted((channel: string, user: string, auto: boolean, viewers?: number) => this.onHosted(channel, user, auto, viewers))
     this.chat.onTimeout((channel: string, user: string, duration: number) => this.onTimeout(channel, user, duration))
 
-    Event.addListener(Events.onChannelRedeem, (data: onRedeemEvent) => this.onChannelRedeem(data))
-    Event.addListener(Events.onSub, (data: onSubEvent) => this.onSub(data))
-    Event.addListener(Events.onBits, (data: onBitsEvent) => this.onBits(data))
-    Event.addListener(Events.onDonate, (data: onDonateEvent) => this.onDonate(data))
-    Event.addListener(Events.toSay, (data: toSayEvent) => this.toSay(data))
-    Event.addListener(Events.onBRB, (data: onBRBEvent) => this.onBRB(data))
+    Event.addListener(Events.onChannelRedeem, this.onChannelRedeem)
+    Event.addListener(Events.onSub, this.onSub)
+    Event.addListener(Events.onBits, this.onBits)
+    Event.addListener(Events.onDonate, this.onDonate)
+    Event.addListener(Events.toSay, this.toSay)
+    Event.addListener(Events.onBRB, this.onBRB)
   }
 
-  private async onChat(channel: string, user: string, message: string, msg: TwitchPrivateMessage) {
+  private async onChat(channel: string, user: string, message: string, msg: PrivateMessage) {
     if (await this.isBot(msg)) return
 
     const trimmed = message.toLowerCase().trim()
@@ -84,7 +77,6 @@ export default class Chat {
       this.emit(Events.onPostClip, new onPostClipEvent(user, message.replace('https://clips.twitch.tv/', '')))
     } else {
       const [command, ...args] = trimmed.split(' ')
-      console.log(command, args)
       switch (command) {
         case Commands.dance:
           this.chat.say(channel, 'for every $5 I\'ll do a dance that you want')
@@ -143,11 +135,11 @@ export default class Chat {
     shoutout(user)
   }
 
-  private isMod(msg: TwitchPrivateMessage) {
+  private isMod(msg: PrivateMessage) {
     return msg.userInfo.isMod || msg.userInfo.isBroadcaster
   }
 
-  private async isBot(msg: TwitchPrivateMessage) {
+  private async isBot(msg: PrivateMessage) {
     const info = await getChatInfo(msg.userInfo.userId)
     const u2san = msg.userInfo.userName === 'u2san_'
     const self = this.chat.currentNick === msg.userInfo.userName
@@ -224,8 +216,8 @@ export default class Chat {
     try {
       await this.chat.say(this.channel, msg)
       complete = 'FULFILLED'
-    } catch (err) {
-      console.error(err)
+    } catch (e) {
+      new Logger(e, 'error')
       complete = 'CANCELED'
     }
 
@@ -238,7 +230,7 @@ export default class Chat {
       await this.chat.runCommercial(this.channel, minutes)
       complete = 'FULFILLED'
     } catch (e) {
-      console.error(e)
+      new Logger(e, 'error')
       complete = 'CANCELED'
     }
 
@@ -251,7 +243,7 @@ export default class Chat {
       await this.chat.timeout(timeout.channel, timeout.message, 180, `${ timeout.user } redeemed ${ timeout.rewardName }`)
       complete = 'FULFILLED'
     } catch (e) {
-      console.error(e)
+      new Logger(e, 'error')
       complete = 'CANCELED'
     }
 

@@ -1,13 +1,24 @@
 import axios, { AxiosInstance } from 'axios'
 import { Manager } from 'socket.io-client'
-import fs, { promises as fsp } from 'fs'
+import { promises as fs } from 'fs'
 
-import { streamlabs } from '../../config'
-import { onDonateEvent, onOutroEvent } from '../../models'
-import { Event, Events } from '../events'
 import { donateData } from './donate'
 
-export default class Streamlabs {
+import { streamlabs, file } from '@config'
+import { Event, Events } from '@events'
+import {
+  onDonateEvent,
+  onOutroEvent
+} from '@models'
+
+const tempData = {
+  'token': '',
+  'refreshToken': '',
+  'expiry': 0,
+  'socket': ''
+}
+
+export class Streamlabs {
 
   private streamlabs: Manager
   private axios: AxiosInstance
@@ -28,8 +39,8 @@ export default class Streamlabs {
   }
 
   public async init() {
-    this.streamlabs.connect((e) => console.error(e))
-    this.streamlabs.on('connect', () => console.log('Streamlabs socket: connected'))
+    this.streamlabs.open()
+    this.streamlabs.on('error', (e: any) => console.error('Streamlabs socket connection error', e))
     this.streamlabs.on('event', (data: donateData) => {
       if (data.type === 'donation') {
         Event.emit(Events.onDonate, new onDonateEvent(data))
@@ -41,56 +52,47 @@ export default class Streamlabs {
 
   private async endCredits(event: onOutroEvent) {
     if (event.outro) {
-      try {
-        const data = await this.axios.post('credits/roll', { access_token: this.token })
-        console.info('streamlabs credits: ', data)
-      } catch (err) {
-        console.error(err.response)
-      }
+      const data = await this.axios.post('credits/roll', { access_token: this.token })
+      console.info('streamlabs credits: ', data.data)
     }
   }
 
   public static async getToken(code: any) {
-    const data: object[] = []
-    try {
-      const token = await axios({
-        method: 'POST',
-        url: 'https://streamlabs.com/api/v1.0/token',
-        data: {
-          client_id: streamlabs.clientId,
-          client_secret: streamlabs.clientSecret,
-          code: code,
-          grant_type: 'authorization_code',
-          redirect_uri: streamlabs.redirectURI
-        }
-      })
+    const token = await axios({
+      method: 'POST',
+      url: 'https://streamlabs.com/api/v1.0/token',
+      data: {
+        client_id: streamlabs.clientId,
+        client_secret: streamlabs.clientSecret,
+        code: code,
+        grant_type: 'authorization_code',
+        redirect_uri: streamlabs.redirectURI
+      }
+    })
 
-      const socket = await axios({
-        method: 'GET',
-        url: 'https://streamlabs.com/api/v1.0/socket/token',
-        params: {
-          access_token: token.data.access_token
-        }
-      })
+    const socket = await axios({
+      method: 'GET',
+      url: 'https://streamlabs.com/api/v1.0/socket/token',
+      params: {
+        access_token: token.data.access_token
+      }
+    })
 
-      data.push(token.data, socket.data)
-    } catch (err) {
-      return err.response
+    return {
+      token: token.data,
+      socket: socket.data
     }
-
-    return data
   }
 
-  public static async readJSON(file: string) {
-    if (!fs.existsSync(file)) {
-      await fsp.writeFile(file, JSON.stringify({
-        token: '',
-        refreshToken: '',
-        expiry: null
-      }), 'utf-8')
+  public static async readJSON() {
+    try {
+      return JSON.parse(await fs.readFile(file.streamlabs, 'utf-8'))
+    } catch (e) {
+      return tempData
     }
+  }
 
-    const data = JSON.parse(await fsp.readFile(file, { encoding: 'utf-8' }))
-    return data
+  public static async createFile() {
+    await fs.writeFile(file.streamlabs, JSON.stringify(tempData, null, 2), 'utf-8')
   }
 }

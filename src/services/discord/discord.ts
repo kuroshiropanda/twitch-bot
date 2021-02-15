@@ -1,11 +1,17 @@
 import Discord, { Client, MessageEmbed, TextChannel } from 'discord.js'
 
-import { discord, twitch } from '../../config'
-import { onScreenshotEvent, onClipEvent, onChatEvent, toSayEvent, onStreamLiveEvent, toPostLiveEvent, onRewardCompleteEvent } from '../../models'
-import { getFollowers, getUserPicture } from '../../common'
-import { Event, Events } from '../events'
+import { discord } from '@config'
+import { Event, Events } from '@events'
+import {
+  onScreenshotEvent,
+  onClipEvent,
+  onChatEvent,
+  toSayEvent,
+  toPostLiveEvent
+} from '@models'
+import { getFollowers, getUserPicture } from 'common'
 
-export default class DiscordHandler {
+export class DiscordHandler {
   private client: Client
 
   constructor() {
@@ -27,7 +33,6 @@ export default class DiscordHandler {
     })
 
     this.client.login(discord.botToken)
-
     this.client.on('message', (msg: Discord.Message) => this.onMessage(msg))
 
     Event.addListener(Events.toPostLive, (data: toPostLiveEvent) => this.onLive(data))
@@ -58,7 +63,7 @@ export default class DiscordHandler {
     const msg = new MessageEmbed()
       .setColor('#FF0000')
       .setTitle(stream.title)
-      .setDescription(`**${user.name}** is live [click here to watch](${url})`)
+      .setDescription(`**${ user.name }** is live [click here to watch](${ url })`)
       .setImage(stream.thumbnail)
       .setThumbnail(gameThumbnail)
       .addField('Playing', game.name)
@@ -66,7 +71,7 @@ export default class DiscordHandler {
       .addField('Followers', followers.total, true)
       .addField('Subscribers', stream.totalSubs, true)
       .addField('Current Stream Tags', tagsString)
-      .setFooter(`${user.name} is live`, user.profilePictureUrl)
+      .setFooter(`${ user.name } is live`, user.profilePictureUrl)
       .setTimestamp(stream.startDate)
 
     this.sendMsg(discord.channels.live, msg)
@@ -77,7 +82,6 @@ export default class DiscordHandler {
       .setAuthor(chat.userInfo.displayName, await getUserPicture(chat.user), `https://twitch.tv/${ chat.user }`)
       .setColor(chat.userInfo.color)
       .setDescription(chat.message)
-      .setFooter('', await chat.badge())
       .setTimestamp(new Date())
     this.sendMsg(discord.channels.chat, msg)
   }
@@ -105,16 +109,12 @@ export default class DiscordHandler {
       .addField('Playing', game.name, true)
       .addField('Clipped by', clip.user, true)
       .setTimestamp(clip.creationDate)
-      .setFooter(`${broadcaster.name}'s clips`, broadcaster.profilePictureUrl)
+      .setFooter(`${ broadcaster.name }'s clips`, broadcaster.profilePictureUrl)
     this.sendMsg(discord.channels.clip, msg)
   }
 
   private async sendMsg(channel: string, msg: any) {
-    try {
-      const text = this.client.channels.cache.get(channel) as TextChannel
-      text.send(msg)
-    } catch (e) {
-      console.error(e)
-    }
+    const text = this.client.channels.cache.get(channel) as TextChannel
+    text.send(msg)
   }
 }
