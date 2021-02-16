@@ -58,12 +58,12 @@ export class Chat {
     this.chat.onHosted((channel: string, user: string, auto: boolean, viewers?: number) => this.onHosted(channel, user, auto, viewers))
     this.chat.onTimeout((channel: string, user: string, duration: number) => this.onTimeout(channel, user, duration))
 
-    Event.addListener(Events.onChannelRedeem, this.onChannelRedeem)
-    Event.addListener(Events.onSub, this.onSub)
-    Event.addListener(Events.onBits, this.onBits)
-    Event.addListener(Events.onDonate, this.onDonate)
-    Event.addListener(Events.toSay, this.toSay)
-    Event.addListener(Events.onBRB, this.onBRB)
+    Event.addListener(Events.onChannelRedeem, (data: onRedeemEvent) => this.onChannelRedeem(data))
+    Event.addListener(Events.onSub, (data: onSubEvent) => this.onSub(data))
+    Event.addListener(Events.onBits, (data: onBitsEvent) => this.onBits(data))
+    Event.addListener(Events.onDonate, (data: onDonateEvent) => this.onDonate(data))
+    Event.addListener(Events.toSay, (data: toSayEvent) => this.toSay(data))
+    Event.addListener(Events.onBRB, (data: onBRBEvent) => this.onBRB(data))
   }
 
   private async onChat(channel: string, user: string, message: string, msg: PrivateMessage) {

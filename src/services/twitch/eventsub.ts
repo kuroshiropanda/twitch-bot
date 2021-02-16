@@ -1,5 +1,5 @@
 import { UserIdResolvable } from 'twitch'
-import { EventSubListener, MiddlewareAdapter, ReverseProxyAdapter } from 'twitch-eventsub'
+import { EventSubListener, ReverseProxyAdapter } from 'twitch-eventsub'
 import { EventSubConfig } from 'twitch-eventsub/lib/EventSubListener'
 import { EventSubChannelHypeTrainBeginEvent } from 'twitch-eventsub/lib/Events/EventSubChannelHypeTrainBeginEvent'
 import { EventSubChannelHypeTrainProgressEvent } from 'twitch-eventsub/lib/Events/EventSubChannelHypeTrainProgressEvent'
@@ -11,12 +11,12 @@ import { EventSubChannelRedemptionUpdateEvent } from 'twitch-eventsub/lib/Events
 
 import { reverseProxy, twitch } from '@config'
 import { Event, Events } from '@events'
-import { api } from './api'
 import {
   onStreamLiveEvent,
   onStreamOfflineEvent,
   toSayEvent
 } from '@models'
+import { api } from './api'
 
 export class EventSub {
   private eventsub: EventSubListener
@@ -28,6 +28,7 @@ export class EventSub {
   constructor(userId: UserIdResolvable) {
     this.adapter = new ReverseProxyAdapter({
       hostName: reverseProxy.domain,
+      port: reverseProxy.eventsubPort,
       pathPrefix: reverseProxy.eventsubPath
     })
 

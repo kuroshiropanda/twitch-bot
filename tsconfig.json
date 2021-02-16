@@ -29,6 +29,7 @@
       "@discord": [ "services/discord" ],
       "@errorHandler": [ "services/error" ],
       "@events": [ "services/events" ],
+      "@express": [ "services/express" ],
       "@logger": [ "services/logger" ],
       "@obs": [ "services/obs" ],
       "@steam": [ "services/steam" ],

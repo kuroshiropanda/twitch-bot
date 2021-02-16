@@ -3,6 +3,13 @@ import { ApiClient } from 'twitch'
 import { file, reverseProxy } from '@config'
 import { Auth, ApiHandler, Chat, EventSub, PubSub } from '@twitch'
 import { Streamlabs } from '@streamlabs'
+import { OBSController } from '@obs'
+
+const obs = new OBSController()
+
+const startObs = async () => {
+  await obs.connect()
+}
 
 const startBot = async () => {
   const bot = new Auth(file.bot)
@@ -46,6 +53,7 @@ const startStreamlabs = async () => {
 }
 
 export {
+  startObs,
   startBot,
   startUser,
   startStreamlabs
