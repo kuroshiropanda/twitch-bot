@@ -1,3 +1,3 @@
-import Discord from './discord'
+import { DiscordHandler } from './discord'
 
-export default Discord
+export { DiscordHandler }

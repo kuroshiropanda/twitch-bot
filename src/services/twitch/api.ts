@@ -1,7 +1,9 @@
 import { ApiClient, HelixCustomRewardRedemptionTargetStatus, HelixUpdateCustomRewardData, UserIdResolvable } from 'twitch'
-import { twitch } from '../../config'
+import { ClientCredentialsAuthProvider } from 'twitch-auth'
 
-import { Event, Events } from '../events'
+import { twitch } from '@config'
+import { Event, Events } from '@events'
+import { Steam } from '@steam'
 import {
   toSayEvent,
   onSetGameEvent,
@@ -15,12 +17,14 @@ import {
   onStreamOfflineEvent,
   onGetGameEvent,
   toUpdateRewardEvent
-} from '../../models'
-import { Rewards } from '../pubsub'
-import Steam from '../steam'
+} from '@models'
 
+import { Rewards } from './rewards'
 
-export default class ApiHandler {
+const authProvider = new ClientCredentialsAuthProvider(twitch.clientId, twitch.clientSecret)
+export const api = new ApiClient({ authProvider })
+
+export class ApiHandler {
   private api: ApiClient
 
   constructor(api: ApiClient) {
@@ -50,7 +54,7 @@ export default class ApiHandler {
       await this.api.kraken.channels.updateChannel(event.channel, {
         game: game.name
       })
-      this.emit(Events.toSay, new toSayEvent(`Successfully changed game to ${game}`))
+      this.emit(Events.toSay, new toSayEvent(`Successfully changed game to ${game.name}`))
     } else {
       this.emit(Events.toSay, new toSayEvent(`${event.game} is not a correct twitch category, please try again`))
     }
@@ -95,7 +99,9 @@ export default class ApiHandler {
   }
 
   private async onStreamOffline(data: onStreamOfflineEvent) {
-    this.updateReward(data.broadcasterId, Rewards.tiktok, { cost: 50000 })
+    const cost = 50000
+    const tiktok = await this.api.helix.channelPoints.getCustomRewardById(data.broadcasterId, Rewards.tiktok)
+    if (tiktok.cost !== cost) this.updateReward(data.broadcasterId, Rewards.tiktok, { cost })
   }
 
   private async onRewardComplete(data: onRewardCompleteEvent) {
@@ -120,11 +126,9 @@ export default class ApiHandler {
 
   private async updateReward(broadcasterId: UserIdResolvable, rewardId: string, data: HelixUpdateCustomRewardData) {
     try {
-      const reward = await this.api.helix.channelPoints.updateCustomReward(broadcasterId, rewardId, data)
-      console.log(reward.title, data)
+      await this.api.helix.channelPoints.updateCustomReward(broadcasterId, rewardId, data)
       return true
     } catch (e) {
-      console.error(e)
       return false
     }
   }

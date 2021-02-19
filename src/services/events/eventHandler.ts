@@ -1,8 +1,12 @@
 import { EventEmitter } from 'events'
 import { Server as HttpServer } from 'http'
 import { Server } from 'socket.io'
-import { onChatEvent, onShoutoutEvent } from '../../models'
-import { Events } from './events'
+
+import { Events } from '@events'
+import {
+  onChatEvent,
+  onShoutoutEvent
+} from '@models'
 
 export const Event = new EventEmitter()
 

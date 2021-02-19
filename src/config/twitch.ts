@@ -1,14 +1,4 @@
-declare let process: {
-  env: {
-    CHANNEL: string
-    TWITCH_CLIENT_ID: string
-    TWITCH_CLIENT_SECRET: string
-    TWITCH_CALLBACK_URI: string
-    EVENTSUB_SECRET: string
-  }
-}
-
-interface clientObj {
+export type twitchConfig = {
   channel: string
   clientId: string
   clientSecret: string
@@ -18,7 +8,7 @@ interface clientObj {
   botScopes: string[]
 }
 
-export const twitch: clientObj = {
+export const twitch: twitchConfig = {
   channel: process.env.CHANNEL,
   clientId: process.env.TWITCH_CLIENT_ID,
   clientSecret: process.env.TWITCH_CLIENT_SECRET,

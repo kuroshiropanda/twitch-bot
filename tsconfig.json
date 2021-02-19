@@ -9,6 +9,7 @@
     "target": "ES2017",
     "module": "CommonJS",
     "outDir": "./dist",
+    "baseUrl": "./src",
     "removeComments": true,
     "strictFunctionTypes": true,
     "noImplicitThis": true,
@@ -20,6 +21,28 @@
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
-  }
+    "forceConsistentCasingInFileNames": true,
+    "paths": {
+      "@config": [ "config" ],
+      "@models": [ "models" ],
+      "@routes": [ "routes" ],
+      "@discord": [ "services/discord" ],
+      "@errorHandler": [ "services/error" ],
+      "@events": [ "services/events" ],
+      "@express": [ "services/express" ],
+      "@logger": [ "services/logger" ],
+      "@obs": [ "services/obs" ],
+      "@steam": [ "services/steam" ],
+      "@streamlabs": [ "services/streamlabs" ],
+      "@twitch": [ "services/twitch" ]
+    },
+    "plugins": [
+      { "transform": "typescript-transform-paths" }
+    ]
+  },
+  "exclude": [
+    "data",
+    "dist",
+    "resources"
+  ]
 }

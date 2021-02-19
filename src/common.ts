@@ -1,68 +1,55 @@
 import { UserIdResolvable } from 'twitch/lib'
 
-import { api } from './services/api'
-import { Event, Events } from './services/events'
+import { api } from '@twitch'
+import { Event, Events } from '@events'
 
 import {
   onShoutoutEvent,
   toSayEvent
-} from './models'
-
-interface clipObject {
-  title: string,
-  clip: string
-}
+} from '@models'
 
 const getClips = async (name: string, limit: number = 50, date?: { start?: string, end?: string }) => {
-  try {
-    let startDate: string
-    let endDate: string
-    if (date === undefined) {
-      startDate = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString()
-      endDate = new Date().toISOString()
-    } else {
-      startDate = date.start
-      endDate = date.end
-    }
-    const user = await api.helix.users.getUserByName(name)
-    const clips = await api.helix.clips.getClipsForBroadcaster(user, {
-      startDate,
-      endDate,
-      limit
-    })
-
-    return clips.data
-  } catch (err) {
-    console.error(err)
-    return undefined
+  let startDate: string
+  let endDate: string
+  if (date === undefined) {
+    startDate = new Date(new Date().setDate(new Date().getDate() - 30)).toISOString()
+    endDate = new Date().toISOString()
+  } else {
+    startDate = date.start
+    endDate = date.end
   }
+  const user = await api.helix.users.getUserByName(name)
+  const clips = await api.helix.clips.getClipsForBroadcaster(user, {
+    startDate,
+    endDate,
+    limit
+  })
+
+  if (!clips.data) return null
+  return clips.data
 }
 
 const thumbnailToUrl = (url: string, res: string) => {
   const AT = /AT-cm%7C/g
   if (AT.test(url)) {
-    return `${url.replace('-preview-480x272.jpg', `-${res}.mp4`)}`
+    return `${ url.replace('-preview-480x272.jpg', `-${ res }.mp4`) }`
   } else {
-    return `${url.replace('twitch.tv/', 'twitch.tv/AT-cm%7C').replace('-preview-480x272.jpg', `-${res}.mp4`)}`
+    return `${ url.replace('twitch.tv/', 'twitch.tv/AT-cm%7C').replace('-preview-480x272.jpg', `-${ res }.mp4`) }`
   }
 }
 
 const shoutout = async (user: string) => {
-  try {
-    const channel = user.replace('@', '')
-    const clips = await getClips(channel)
+  const channel = user.replace('@', '')
+  const clips = await getClips(channel)
 
-    const clipsArray = clips.map((clip) => {
-      return thumbnailToUrl(clip.thumbnailUrl, '360')
-    })
+  const clipsArray = clips.map((clip) => {
+    return thumbnailToUrl(clip.thumbnailUrl, '360')
+  })
 
-    if (clipsArray.length > 0) {
-      Event.emit(Events.onShoutout, new onShoutoutEvent(user, clipsArray))
-    } else {
-      Event.emit(Events.toSay, new toSayEvent(`${user} doesn't have clips`))
-    }
-  } catch (err) {
-    console.error(err)
+  if (clipsArray.length > 0) {
+    Event.emit(Events.onShoutout, new onShoutoutEvent(user, clipsArray))
+  } else {
+    Event.emit(Events.toSay, new toSayEvent(`${ user } doesn't have clips`))
   }
 }
 

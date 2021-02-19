@@ -1,13 +1,25 @@
 import OBSWebSocket from 'obs-websocket-js'
 import { promises as fs } from 'fs'
+import { HelixCustomRewardRedemptionTargetStatus } from 'twitch/lib'
 
-import { obs, twitch } from '../../config'
-import { onRedeemEvent, onOutroEvent, onScreenshotEvent, onBRBEvent, onHostEvent, onRewardCompleteEvent, onCreateClipEvent, toUpdateRewardEvent } from '../../models'
-import { Rewards } from '../pubsub'
-import { Event, Events } from '../events'
 import { Scenes } from './scenes'
 import { AudioDevice } from './audio'
-import { HelixCustomRewardRedemptionTargetStatus } from 'twitch/lib'
+
+import { obs, twitch } from '@config'
+import { Rewards } from '@twitch'
+import { Event, Events } from '@events'
+import {
+  onRedeemEvent,
+  onOutroEvent,
+  onScreenshotEvent,
+  onBRBEvent,
+  onHostEvent,
+  onRewardCompleteEvent,
+  onCreateClipEvent,
+  toUpdateRewardEvent
+} from '@models'
+import { Logger } from '@logger'
+
 
 export interface SwitchScenesData {
   'scene-name': string
@@ -21,7 +33,7 @@ export interface SceneItemVisibilityChangedData {
   'item-visible': boolean
 }
 
-export default class OBSController {
+export class OBSController {
 
   private obs: OBSWebSocket
   private currentScene: string
@@ -33,6 +45,11 @@ export default class OBSController {
     this.obs = new OBSWebSocket({ captureRejections: true })
     this.connected = false
     this._user = twitch.channel
+
+    this.obs.on('ConnectionClosed', () => this.disconnect())
+    this.obs.on('StreamStarted', () => this.started())
+    this.obs.on('SwitchScenes', (data: SwitchScenesData) => this.onChangeScene(data['scene-name']))
+    this.obs.on('SceneItemVisibilityChanged', (data: SceneItemVisibilityChangedData) => this.onItemVisibilityChange(data))
 
     Event.addListener(Events.onChannelRedeem, (data: onRedeemEvent) => this.onRedeem(data))
   }
@@ -63,21 +80,12 @@ export default class OBSController {
 
   public async connect() {
     if (!this.connected || this.connected === undefined) {
-      try {
-        await this.obs.connect({
-          address: obs.address,
-          password: obs.password
-        })
-        this.connected = true
-        console.log('OBSWEBSocket: connected ' + this.connected)
-      } catch (err) {
-        console.error(err)
-      }
-
-      this.obs.on('ConnectionClosed', () => this.disconnect())
-      this.obs.on('StreamStarted', () => this.started())
-      this.obs.on('SwitchScenes', (data: SwitchScenesData) => this.onChangeScene(data['scene-name']))
-      this.obs.on('SceneItemVisibilityChanged', (data: SceneItemVisibilityChangedData) => this.onItemVisibilityChange(data))
+      await this.obs.connect({
+        address: obs.address,
+        password: obs.password
+      })
+      this.connected = true
+      console.log('OBSWEBSocket: connected ' + this.connected)
     }
   }
 
@@ -89,7 +97,7 @@ export default class OBSController {
     this.obs.disconnect()
     this.obs.removeAllListeners()
     this.connected = false
-    console.log('obs disconnected ' + this.connected)
+    console.log('OBSWEBSocket: connected ' + this.connected)
   }
 
   private async started() {
@@ -100,7 +108,8 @@ export default class OBSController {
   private async onChangeScene(scene: string) {
     switch (scene) {
       case Scenes.outro:
-        this.emit(Events.onOutro, new onOutroEvent(true))
+        const status = await this.obs.send('GetStreamingStatus')
+        this.emit(Events.onOutro, new onOutroEvent(status.streaming))
         break
       case Scenes.brb:
         this.mute()
@@ -181,14 +190,12 @@ export default class OBSController {
   }
 
   private async stop(data: onRedeemEvent) {
-    try {
-      const scene = await this.getCurrentScene()
-      this.scene = scene
+    const scene = await this.getCurrentScene()
+    this.scene = scene
 
-      await this.setCurrentScene(Scenes.outro)
-    } catch (err) {
-      console.error(err)
-    }
+    this.setSourceVisibility('clips outro', true)
+    // this.setSourceVisibility('reward cd', true)
+    await this.setCurrentScene(Scenes.outro)
 
     this.timeout = setTimeout(async () => {
       await this.obs.send('StopStreaming')
@@ -197,10 +204,12 @@ export default class OBSController {
     this.rewardComplete(data.channel, data.rewardId, data.id, 'FULFILLED')
   }
 
-  private stopCancel(data: onRedeemEvent) {
-    this.obs.send('SetCurrentScene', {
+  private async stopCancel(data: onRedeemEvent) {
+    await this.obs.send('SetCurrentScene', {
       'scene-name': this.scene ? this.scene : Scenes.display
-    }).catch((e) => console.error(e))
+    })
+    // this.setSourceVisibility('redeemed', false)
+    // this.setSourceVisibility('reward cd', false)
 
     clearTimeout(this.timeout)
 
@@ -218,23 +227,14 @@ export default class OBSController {
   }
 
   private async getCurrentScene() {
-    try {
-      const scene = await this.obs.send('GetCurrentScene')
-      return scene.name
-    } catch (err) {
-      console.error(err)
-      return undefined
-    }
+    const scene = await this.obs.send('GetCurrentScene')
+    return scene.name
   }
 
   private async setCurrentScene(scene: string) {
-    try {
-      await this.obs.send('SetCurrentScene', {
-        'scene-name': scene
-      })
-    } catch (err) {
-      console.error(err)
-    }
+    await this.obs.send('SetCurrentScene', {
+      'scene-name': scene
+    })
   }
 
   private async freezeVintage(bool: boolean) {
@@ -259,20 +259,16 @@ export default class OBSController {
   }
 
   private async setMute(source: string, bool: boolean) {
-    try {
-      await this.obs.send('SetMute', {
-        source: source,
-        mute: bool
-      })
-    } catch (err) {
-      console.error(err)
-    }
+    await this.obs.send('SetMute', {
+      source: source,
+      mute: bool
+    })
   }
 
   private async screenshot(screenshot: onRedeemEvent, source: string) {
     let complete: HelixCustomRewardRedemptionTargetStatus
     try {
-      const filePath = `/images/${ new Date().toISOString().replace(/:/gi, '-') }.png`
+      const filePath = `./images/${ new Date().toISOString().replace(/:/gi, '-') }.png`
 
       const img = await this.obs.send('TakeSourceScreenshot', {
         sourceName: source,
@@ -287,7 +283,7 @@ export default class OBSController {
       this.emit(Events.onScreenshot, new onScreenshotEvent(screenshot.user, filePath))
       complete = 'FULFILLED'
     } catch (err) {
-      console.error({ TakeSourceScreenshot: err })
+      new Logger(err, 'error')
       complete = 'CANCELED'
     }
 

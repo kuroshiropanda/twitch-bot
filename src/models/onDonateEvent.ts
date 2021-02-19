@@ -1,4 +1,4 @@
-import { donateData } from '../services/streamlabs'
+import { donateData } from '@streamlabs'
 
 export class onDonateEvent {
   private readonly _data: donateData

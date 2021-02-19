@@ -1,7 +1,7 @@
 .vscode/
-node_modules/
+data/
 dist/
+images/
+logs/
+node_modules/
 .env
-bot.json
-streamlabs.json
-user.json

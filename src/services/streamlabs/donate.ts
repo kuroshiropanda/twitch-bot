@@ -1,4 +1,4 @@
-export interface donateData {
+export type donateData = {
   type: string
   message: [
     {

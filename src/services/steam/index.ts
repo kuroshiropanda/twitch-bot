@@ -1,3 +1,3 @@
-import Steam from './steam'
+import { Steam } from './steam'
 
-export default Steam
+export { Steam }

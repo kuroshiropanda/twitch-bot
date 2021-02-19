@@ -5,10 +5,12 @@ services:
     container_name: bot
     build: ./
     volumes:
-      - ${OBS_SCREENSHOT}:/images
+      - ${OBS_SCREENSHOT}:/home/node/app/images
+      - ./logs:/home/node/app/logs
+      - ./data:/home/node/app/data
     ports:
       - "3000:3000"
-      - "42394:42394"
+      - "8080:8080"
     restart: unless-stopped
   # dashboard:
   #   container_name: dashboard
