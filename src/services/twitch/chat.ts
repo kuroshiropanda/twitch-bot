@@ -39,14 +39,10 @@ export class Chat {
       channels: [this.channel],
       logger: {
         name: 'chat',
-        minLevel: 'INFO',
-        colors: true,
-        emoji: true,
-        timestamps: true
+        minLevel: 'INFO'
       }
     }
-    this.chat = new ChatClient(auth,
-      this.opts)
+    this.chat = new ChatClient(auth, this.opts)
   }
 
   public async init() {

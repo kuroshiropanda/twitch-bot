@@ -1,4 +1,4 @@
-import Discord, { Client, MessageEmbed, TextChannel } from 'discord.js'
+import Discord, { APIMessageContentResolvable, Client, MessageAdditions, MessageEmbed, MessageOptions, TextChannel } from 'discord.js'
 
 import { discord } from '@config'
 import { Event, Events } from '@events'
@@ -113,7 +113,7 @@ export class DiscordHandler {
     this.sendMsg(discord.channels.clip, msg)
   }
 
-  private async sendMsg(channel: string, msg: any) {
+  private async sendMsg(channel: string, msg: APIMessageContentResolvable | (MessageOptions & { split?: false }) | MessageAdditions) {
     const text = this.client.channels.cache.get(channel) as TextChannel
     text.send(msg)
   }

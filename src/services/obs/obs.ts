@@ -21,12 +21,12 @@ import {
 import { Logger } from '@logger'
 
 
-export interface SwitchScenesData {
+export type SwitchScenesData = {
   'scene-name': string
   sources: OBSWebSocket.SceneItem[]
 }
 
-export interface SceneItemVisibilityChangedData {
+export type SceneItemVisibilityChangedData = {
   'scene-name': string
   'item-name': string
   'item-id': number
@@ -101,8 +101,9 @@ export class OBSController {
   }
 
   private async started() {
-    this.setSourceVisibility('intro songs', true)
-    this.setSourceVisibility('start websocket', false)
+    this.setCurrentScene(Scenes.intro)
+    this.setSourceVisibility(Scenes.intro, 'intro songs', true)
+    this.setSourceVisibility(Scenes.intro, 'start websocket', false)
   }
 
   private async onChangeScene(scene: string) {
@@ -110,6 +111,7 @@ export class OBSController {
       case Scenes.outro:
         const status = await this.obs.send('GetStreamingStatus')
         this.emit(Events.onOutro, new onOutroEvent(status.streaming))
+        this.setSourceVisibility(Scenes.outro, 'outro songs', true)
         break
       case Scenes.brb:
         this.mute()
@@ -193,8 +195,7 @@ export class OBSController {
     const scene = await this.getCurrentScene()
     this.scene = scene
 
-    this.setSourceVisibility('clips outro', true)
-    // this.setSourceVisibility('reward cd', true)
+    this.setSourceVisibility(Scenes.outro, 'stop stream', true)
     await this.setCurrentScene(Scenes.outro)
 
     this.timeout = setTimeout(async () => {
@@ -208,9 +209,7 @@ export class OBSController {
     await this.obs.send('SetCurrentScene', {
       'scene-name': this.scene ? this.scene : Scenes.display
     })
-    // this.setSourceVisibility('redeemed', false)
-    // this.setSourceVisibility('reward cd', false)
-
+    this.setSourceVisibility(Scenes.outro, 'stop stream', false)
     clearTimeout(this.timeout)
 
     this.rewardComplete(data.channel, data.rewardId, data.id, 'FULFILLED')
@@ -290,16 +289,17 @@ export class OBSController {
     this.rewardComplete(screenshot.channel, screenshot.rewardId, screenshot.id, complete)
   }
 
-  private async setSourceVisibility(source: string, visible: boolean) {
+  private async setSourceVisibility(scene: string, source: string, visible: boolean) {
     await this.obs.send('SetSceneItemProperties', {
+      'scene-name': scene,
       item: {
         name: source
       },
       visible: visible,
-      bounds: null,
-      crop: null,
-      position: null,
-      scale: null,
+      bounds: {},
+      crop: {},
+      position: {},
+      scale: {},
     })
   }
 

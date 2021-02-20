@@ -35,10 +35,7 @@ export class EventSub {
     this.config = {
       logger: {
         name: 'eventsub',
-        minLevel: 'DEBUG',
-        colors: true,
-        emoji: true,
-        timestamps: true
+        minLevel: 'DEBUG'
       }
     }
 
