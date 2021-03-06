@@ -8,9 +8,11 @@ services:
       - ${OBS_SCREENSHOT}:/home/node/app/images
       - ./logs:/home/node/app/logs
       - ./data:/home/node/app/data
+    env_file: .env
     ports:
       - "3000:3000"
       - "8080:8080"
+    mem_limit: 2g
     restart: unless-stopped
   # dashboard:
   #   container_name: dashboard

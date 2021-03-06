@@ -9,7 +9,6 @@
   "main": "index.js",
   "dependencies": {
     "axios": "^0.21.1",
-    "bufferutil": "^4.0.3",
     "discord.js": "^12.5.1",
     "dotenv": "^8.2.0",
     "dotenv-expand": "^5.1.0",
@@ -22,7 +21,6 @@
     "twitch-chat-client": "^4.4.2",
     "twitch-eventsub": "^4.4.2",
     "twitch-pubsub-client": "^4.4.2",
-    "utf-8-validate": "^5.0.4",
     "winston": "^3.3.3"
   },
   "devDependencies": {
@@ -40,7 +38,8 @@
     "build": "npm exec ttsc",
     "postversion": "git push && git push --tags",
     "prestart": "npm exec ttsc",
-    "start": "node dist/index"
+    "start": "node dist/index",
+    "docker": "docker-compose up -d --build"
   },
   "author": "kuroshiropanda",
   "license": "SEE LICENSE IN LICENSE"
