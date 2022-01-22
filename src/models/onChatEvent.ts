@@ -1,8 +1,9 @@
-import { ChatUser, ParsedMessagePart } from 'twitch-chat-client/lib'
+import { ChatUser } from '@twurple/chat/lib'
+import { ParsedMessagePart } from '@twurple/common/lib'
 
 export class onChatEvent {
   constructor(
-    public id: string,
+    public id: string | undefined,
     public user: string,
     public emotes: ParsedMessagePart[],
     public message: string,

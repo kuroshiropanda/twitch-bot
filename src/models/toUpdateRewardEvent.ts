@@ -1,5 +1,5 @@
-import { HelixUpdateCustomRewardData } from 'twitch/lib'
 import { SceneItemVisibilityChangedData } from '@obs'
+import { HelixUpdateCustomRewardData } from '@twurple/api/lib'
 
 export class toUpdateRewardEvent {
   private readonly _data: SceneItemVisibilityChangedData
@@ -8,7 +8,9 @@ export class toUpdateRewardEvent {
     public user: string,
     public rewardId: string[],
     public data: HelixUpdateCustomRewardData
-  ) {}
+  ) {
+    this._data = _data
+  }
 
   get scene() {
     return this._data['scene-name']

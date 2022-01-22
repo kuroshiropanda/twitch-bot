@@ -1,4 +1,2 @@
-import { Streamlabs } from './streamlabs'
-import { donateData } from './donate'
-
-export { Streamlabs, donateData }
+export * from './streamlabs'
+export * from './donate'

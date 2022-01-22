@@ -1,22 +1,8 @@
-import { api, ApiHandler } from './api'
-import { Auth } from './auth'
-import { Chat } from './chat'
-import { Commands } from './commands'
-import { EventSub } from './eventsub'
-import { PubSub } from './pubsub'
-import { Rewards } from './rewards'
-import { Twitch, TokenData, JSONData } from './twitch'
-
-export {
-  api,
-  ApiHandler,
-  Auth,
-  Chat,
-  Commands,
-  EventSub,
-  PubSub,
-  Rewards,
-  Twitch,
-  TokenData,
-  JSONData
-}
+export * from './api'
+export * from './auth'
+export * from './chat'
+export * from './commands'
+export * from './eventsub'
+export * from './pubsub'
+export * from './rewards'
+export * from './twitch'

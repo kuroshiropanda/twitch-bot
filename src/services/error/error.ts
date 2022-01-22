@@ -7,7 +7,8 @@ export class ErrorHandler {
   }
 
   private uncaughtException(error: Error) {
-    new Logger(error.stack, 'error')
+    console.error(error)
+    // new Logger(error, 'error')
   }
 
   private unhandledRejection(reason: any, promise: any) {

@@ -9,16 +9,7 @@ declare let process: {
   }
 }
 
-export type reverseProxyConfig = {
-  domain: string
-  path: string
-  url: string
-  port: number
-  eventsubPort: number
-  eventsubPath: string
-}
-
-export const reverseProxy: reverseProxyConfig = {
+export const reverseProxy = {
   domain: process.env.DOMAIN,
   path: process.env.APP_PATH,
   url: process.env.APP_URL,

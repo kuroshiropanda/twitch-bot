@@ -1,4 +1,4 @@
-import { EventSubStreamOnlineEvent } from 'twitch-eventsub/lib/Events/EventSubStreamOnlineEvent'
+import {EventSubStreamOnlineEvent} from '@twurple/eventsub/lib/Events/EventSubStreamOnlineEvent'
 
 export class onStreamLiveEvent {
   private readonly _data: EventSubStreamOnlineEvent

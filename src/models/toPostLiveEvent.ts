@@ -1,11 +1,11 @@
 import {
+  HelixGame,
   HelixPaginatedResult,
   HelixStream,
   HelixSubscription,
+  HelixTag,
   HelixUser,
-  HelixGame,
-  HelixTag
-} from 'twitch/lib'
+} from '@twurple/api/lib'
 
 export class toPostLiveEvent {
   private readonly _data: HelixStream
@@ -19,7 +19,7 @@ export class toPostLiveEvent {
   }
 
   get totalSubs() {
-    return this._subs.data.length - 2
+    return `${this._subs.data.length - 2}`
   }
 
   get title() {
@@ -38,11 +38,11 @@ export class toPostLiveEvent {
     return this._data.startDate
   }
 
-  async getUser(): Promise<HelixUser> {
+  async getUser(): Promise<HelixUser | null> {
     return await this._data.getUser()
   }
 
-  async getGame(): Promise<HelixGame> {
+  async getGame(): Promise<HelixGame | null> {
     return await this._data.getGame()
   }
 

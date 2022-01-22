@@ -2,6 +2,7 @@ import axios from 'axios'
 import fs, { promises as fsp } from 'fs'
 
 import { twitch } from '@config'
+import { AccessToken } from '@twurple/auth/lib'
 
 export type TokenData = {
   auth: {
@@ -24,12 +25,9 @@ export type TokenData = {
   }
 }
 
-export type JSONData = {
+export interface JSONData extends AccessToken {
   id: string
   username: string
-  token: string
-  refreshToken: string
-  expiry: number
 }
 
 export class Twitch {
@@ -51,7 +49,7 @@ export class Twitch {
       url: 'https://api.twitch.tv/helix/users',
       headers: {
         'Client-ID': twitch.clientId,
-        'Authorization': `Bearer ${ token.data.access_token }`
+        'Authorization': `Bearer ${token.data.access_token}`
       }
     })
 

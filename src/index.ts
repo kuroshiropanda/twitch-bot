@@ -1,7 +1,7 @@
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
 const env = dotenv.config()
-dotenvExpand(env)
+dotenvExpand.expand(env)
 
 import http from 'http'
 
@@ -13,7 +13,7 @@ import { app } from '@express'
 
 import { startBot, startObs, startStreamlabs, startUser } from 'startup'
 
-const start = async () => {
+(async () => {
 
   new ErrorHandler()
   const server = http.createServer(app)
@@ -29,6 +29,4 @@ const start = async () => {
   startStreamlabs()
 
   server.listen(reverseProxy.port)
-}
-
-start()
+})()

@@ -1,4 +1,4 @@
-import { HelixCustomRewardRedemptionTargetStatus } from 'twitch/lib'
+import { HelixCustomRewardRedemptionTargetStatus } from '@twurple/api/lib'
 
 export class onRewardCompleteEvent {
   constructor(

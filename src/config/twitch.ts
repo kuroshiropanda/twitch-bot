@@ -1,17 +1,7 @@
-export type twitchConfig = {
-  channel: string
-  clientId: string
-  clientSecret: string
-  redirectURI: string
-  secret: string
-  scopes: string[]
-  botScopes: string[]
-}
-
-export const twitch: twitchConfig = {
-  channel: process.env.CHANNEL,
-  clientId: process.env.TWITCH_CLIENT_ID,
-  clientSecret: process.env.TWITCH_CLIENT_SECRET,
+export const twitch = {
+  channel: process.env.CHANNEL || 'kuroshiropanda',
+  clientId: process.env.TWITCH_CLIENT_ID as string,
+  clientSecret: process.env.TWITCH_CLIENT_SECRET as string,
   redirectURI: process.env.TWITCH_CALLBACK_URI,
   secret: process.env.EVENTSUB_SECRET,
   scopes: [

@@ -1,4 +1,4 @@
-import { HelixClip, HelixGame, HelixUser } from 'twitch/lib'
+import { HelixClip, HelixGame, HelixUser } from '@twurple/api/lib'
 
 export class onClipEvent {
   private readonly _data: HelixClip
@@ -37,11 +37,11 @@ export class onClipEvent {
     return this._data.creationDate
   }
 
-  async getBroadcaster(): Promise<HelixUser> {
+  async getBroadcaster(): Promise<HelixUser | null> {
     return await this._data.getBroadcaster()
   }
 
-  async getGame(): Promise<HelixGame> {
+  async getGame(): Promise<HelixGame | null> {
     return await this._data.getGame()
   }
 }

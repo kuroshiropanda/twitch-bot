@@ -16,10 +16,13 @@ export class Steam {
 
   public static async getGameUrl(game: string): Promise<string> {
     const json = JSON.parse(await fs.readFile('steam.json', { encoding: 'utf-8' }))
+
+    if (game === 'Just Chatting') return ''
+
     for (const app of json.apps) {
       if (app.name === game) {
-        const name = app.name.replace(/\'/g, '').replace(/\s/g, '_')
-        return `https://store.steampowered.com/app/${ app.appid }/${ name }`
+        const name = app.name.replace(/'/g, '').replace(/\s/g, '_')
+        return `https://store.steampowered.com/app/${app.appid}/${name}`
       }
     }
 

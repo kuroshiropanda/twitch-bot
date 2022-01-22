@@ -4,7 +4,7 @@ export class Logger {
 
   private log: winston.Logger
 
-  constructor(msg: string, lvl: string) {
+  constructor(msg: string | undefined, lvl: string) {
     this.log = winston.createLogger({
       transports: [
         new winston.transports.Console({

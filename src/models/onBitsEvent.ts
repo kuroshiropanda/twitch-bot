@@ -1,4 +1,4 @@
-import { PubSubBitsMessage } from 'twitch-pubsub-client/lib'
+import { PubSubBitsMessage } from '@twurple/pubsub/lib'
 
 export class onBitsEvent {
   private readonly _data: PubSubBitsMessage

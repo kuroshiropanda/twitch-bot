@@ -1,4 +1,4 @@
-import { PubSubRedemptionMessage } from 'twitch-pubsub-client/lib'
+import { PubSubRedemptionMessage } from '@twurple/pubsub/lib'
 
 export class onRedeemEvent {
   private _data: PubSubRedemptionMessage
@@ -19,7 +19,7 @@ export class onRedeemEvent {
   }
 
   get rewardName(): string {
-    return this._data.rewardName
+    return this._data.rewardTitle
   }
 
   get user(): string {

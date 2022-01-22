@@ -1,48 +1,64 @@
-import { ApiClient } from 'twitch'
-
-import { file, reverseProxy } from '@config'
-import { Auth, ApiHandler, Chat, EventSub, PubSub } from '@twitch'
-import { Streamlabs } from '@streamlabs'
+import { file, reverseProxy, twitch } from '@config'
 import { OBSController } from '@obs'
+import { Streamlabs } from '@streamlabs'
+import { ApiHandler, Auth, Chat, EventSub, JSONData, PubSub } from '@twitch'
+import { ApiClient } from '@twurple/api'
 
 const obs = new OBSController()
 
-const startObs = async () => {
+export const startObs = async () => {
   await obs.connect()
 }
 
-const startBot = async () => {
+export const startBot = async () => {
   const bot = new Auth(file.bot)
-  const botInfo = await bot.readFile()
-  if (botInfo.token.length > 0) {
+  try {
     const chat = new Chat(await bot.AuthProvider())
     await chat.init()
-  } else {
-    bot.writeFile(botInfo)
+  } catch (e) {
+    bot.writeFile({
+      id: '',
+      username: '',
+      accessToken: '',
+      refreshToken: '',
+      expiresIn: 0,
+      obtainmentTimestamp: 0,
+      scope: twitch.botScopes,
+    })
     const url = `${reverseProxy.url}${reverseProxy.path}/twitch/bot`
-    console.info(`open this on your browser: ${ url }`)
+    console.info(`open this on your browser: ${url}`)
   }
 }
 
-const startUser = async () => {
+export const startUser = async () => {
   const user = new Auth(file.user)
-  const userInfo = await user.readFile()
-  if (userInfo.token.length > 0) {
-    const api = new ApiClient({ authProvider: await user.AuthProvider() })
+  let userInfo: JSONData
+  try {
+    userInfo = await user.readFile()
+    const authProvider = await user.AuthProvider()
+    const api = new ApiClient({ authProvider })
     const apiHandler = new ApiHandler(api)
-    const pubsub = new PubSub(api)
+    const pubsub = new PubSub(authProvider)
     const eventsub = new EventSub(userInfo.id)
     await apiHandler.init()
     await pubsub.init()
     await eventsub.init()
-  } else {
-    user.writeFile(userInfo)
+  } catch (e) {
+    user.writeFile({
+      id: '',
+      username: '',
+      accessToken: '',
+      refreshToken: '',
+      expiresIn: 0,
+      obtainmentTimestamp: 0,
+      scope: twitch.scopes,
+    })
     const url = `${reverseProxy.url}${reverseProxy.path}/twitch/user`
-    console.info(`open this on your browser: ${ url }`)
+    console.info(`open this on your browser: ${url}`)
   }
 }
 
-const startStreamlabs = async () => {
+export const startStreamlabs = async () => {
   const slJSON = await Streamlabs.readJSON()
   if (slJSON.token.length > 0) {
     const sl = new Streamlabs(slJSON.socket, slJSON.token)
@@ -50,11 +66,4 @@ const startStreamlabs = async () => {
   } else {
     await Streamlabs.createFile()
   }
-}
-
-export {
-  startObs,
-  startBot,
-  startUser,
-  startStreamlabs
 }

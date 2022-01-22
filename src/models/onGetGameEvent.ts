@@ -2,7 +2,7 @@ export class onGetGameEvent {
   private _channel: string
   constructor(
     _channel: string,
-    public channelId: string,
+    public channelId: string | null,
     public user: string
   ) {
     this._channel = _channel

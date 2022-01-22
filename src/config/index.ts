@@ -1,8 +1,6 @@
-import { twitch } from './twitch'
-import { discord } from './discord'
-import { obs } from './obs'
-import { streamlabs } from './streamlabs'
-import { reverseProxy } from './rproxy'
-import { file } from './files'
-
-export { twitch, discord, obs, streamlabs, reverseProxy, file }
+export * from './twitch'
+export * from './discord'
+export * from './obs'
+export * from './streamlabs'
+export * from './rproxy'
+export * from './files'

@@ -1,18 +1,4 @@
-export type discordConfig = {
-  clientId: string
-  clientSecret: string
-  redirectURI: string
-  publicKey: string
-  botToken: string
-  channels: {
-    live: string
-    chat: string
-    screenshot: string
-    clip: string
-  }
-}
-
-export const discord: discordConfig = {
+export const discord = {
   clientId: process.env.DISCORD_CLIENT_ID,
   clientSecret: process.env.DISCORD_CLIENT_SECRET,
   redirectURI: process.env.DISCORD_CALLBACK_URI,

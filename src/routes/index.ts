@@ -1,5 +1,3 @@
-import { twitchRoutes } from './twitch'
-import { streamlabsRoute } from './streamlabs'
-import { steamRoute } from './steam'
-
-export { twitchRoutes, streamlabsRoute, steamRoute }
+export * from './twitch'
+export * from './streamlabs'
+export * from './steam'

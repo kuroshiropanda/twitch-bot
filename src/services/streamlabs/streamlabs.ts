@@ -41,11 +41,11 @@ export class Streamlabs {
   public async init() {
     this.streamlabs.open()
     this.streamlabs.on('error', (e: any) => console.error('Streamlabs socket connection error', e))
-    this.streamlabs.on('event', (data: donateData) => {
-      if (data.type === 'donation') {
-        Event.emit(Events.onDonate, new onDonateEvent(data))
-      }
-    })
+    // this.streamlabs.on('event', (data: donateData) => {
+    //   if (data.type === 'donation') {
+    //     Event.emit(Events.onDonate, new onDonateEvent(data))
+    //   }
+    // })
 
     Event.addListener(Events.onOutro, (data: onOutroEvent) => this.endCredits(data))
   }

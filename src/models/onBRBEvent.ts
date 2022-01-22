@@ -1,4 +1,4 @@
-import { HelixClip } from 'twitch/lib'
+import { HelixClip } from '@twurple/api/lib'
 
 export class onBRBEvent {
   constructor(

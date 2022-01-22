@@ -1,3 +1,1 @@
-import { app } from './express'
-
-export { app }
+export * from './express'

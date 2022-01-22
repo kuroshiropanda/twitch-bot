@@ -1,19 +1,16 @@
 {
   "compilerOptions": {
-    "lib": [
-      "ES5",
-      "ES6",
-      "ES2016",
-      "ES2017"
-    ],
+    "lib": ["ES5", "ES6", "ES2016", "ES2017"],
     "target": "ES2017",
     "module": "CommonJS",
     "outDir": "./dist",
     "baseUrl": "./src",
-    "removeComments": true,
-    "strictFunctionTypes": true,
-    "noImplicitThis": true,
+    "strict": true,
     "alwaysStrict": true,
+    "importHelpers": true,
+    "removeComments": true,
+    "noImplicitAny": true,
+    "noImplicitThis": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "moduleResolution": "node",
@@ -23,26 +20,24 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true,
     "paths": {
-      "@config": [ "config" ],
-      "@models": [ "models" ],
-      "@routes": [ "routes" ],
-      "@discord": [ "services/discord" ],
-      "@errorHandler": [ "services/error" ],
-      "@events": [ "services/events" ],
-      "@express": [ "services/express" ],
-      "@logger": [ "services/logger" ],
-      "@obs": [ "services/obs" ],
-      "@steam": [ "services/steam" ],
-      "@streamlabs": [ "services/streamlabs" ],
-      "@twitch": [ "services/twitch" ]
+      "@config": ["config"],
+      "@models": ["models"],
+      "@routes": ["routes"],
+      "@discord": ["services/discord"],
+      "@errorHandler": ["services/error"],
+      "@events": ["services/events"],
+      "@express": ["services/express"],
+      "@logger": ["services/logger"],
+      "@obs": ["services/obs"],
+      "@steam": ["services/steam"],
+      "@streamlabs": ["services/streamlabs"],
+      "@twitch": ["services/twitch"]
     },
     "plugins": [
-      { "transform": "typescript-transform-paths" }
+      {
+        "transform": "typescript-transform-paths"
+      }
     ]
   },
-  "exclude": [
-    "data",
-    "dist",
-    "resources"
-  ]
+  "exclude": ["data", "dist", "resources"]
 }

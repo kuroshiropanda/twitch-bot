@@ -1,33 +1,38 @@
-import { ApiClient } from 'twitch'
-import { PubSubBitsMessage, PubSubClient, PubSubRedemptionMessage, PubSubSubscriptionMessage } from 'twitch-pubsub-client'
-
-import { twitch } from '@config'
-import { Event, Events } from '@events'
+import {twitch} from '@config'
+import {Event, Events} from '@events'
+import {onBitsEvent, onRedeemEvent, onSubEvent} from '@models'
+import {AuthProvider} from '@twurple/auth/lib'
 import {
-  onRedeemEvent,
-  onSubEvent,
-  onBitsEvent
-} from '@models'
+  PubSubBitsMessage,
+  PubSubClient,
+  PubSubRedemptionMessage,
+  PubSubSubscriptionMessage,
+} from '@twurple/pubsub'
 
 export class PubSub {
-
-  private api: ApiClient
+  private auth: AuthProvider
   private pubsub: PubSubClient
   private channel: string
 
-  constructor(api: ApiClient) {
-    this.api = api
+  constructor(auth: AuthProvider) {
+    this.auth = auth
     this.pubsub = new PubSubClient()
-    this.channel = twitch.channel
+    this.channel = twitch.channel || 'kuroshiropanda'
   }
 
   public async init() {
-    const reg = await this.pubsub.registerUserListener(this.api, this.channel)
+    const reg = await this.pubsub.registerUserListener(this.auth)
     console.log('PubSub:', reg)
 
-    this.pubsub.onRedemption(this.channel, (msg: PubSubRedemptionMessage) => this.onRedeem(msg))
-    this.pubsub.onSubscription(this.channel, (msg: PubSubSubscriptionMessage) => this.onSub(msg))
-    this.pubsub.onBits(this.channel, (msg: PubSubBitsMessage) => this.onBits(msg))
+    this.pubsub.onRedemption(this.channel, (msg: PubSubRedemptionMessage) =>
+      this.onRedeem(msg)
+    )
+    this.pubsub.onSubscription(this.channel, (msg: PubSubSubscriptionMessage) =>
+      this.onSub(msg)
+    )
+    this.pubsub.onBits(this.channel, (msg: PubSubBitsMessage) =>
+      this.onBits(msg)
+    )
   }
 
   private emit(event: Events, payload: any) {

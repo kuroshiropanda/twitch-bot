@@ -1,3 +1,1 @@
-import { DiscordHandler } from './discord'
-
-export { DiscordHandler }
+export * from './discord'

@@ -1,5 +1,5 @@
-import { EventSubStreamOfflineEvent } from 'twitch-eventsub/lib/Events/EventSubStreamOfflineEvent'
-import { HelixUser } from 'twitch/lib'
+import { HelixUser } from '@twurple/api/lib'
+import { EventSubStreamOfflineEvent } from '@twurple/eventsub/lib/Events/EventSubStreamOfflineEvent'
 
 export class onStreamOfflineEvent {
   private readonly _data: EventSubStreamOfflineEvent

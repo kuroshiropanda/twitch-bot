@@ -1,25 +1,21 @@
-import OBSWebSocket from 'obs-websocket-js'
-import { promises as fs } from 'fs'
-import { HelixCustomRewardRedemptionTargetStatus } from 'twitch/lib'
-
-import { Scenes } from './scenes'
-import { AudioDevice } from './audio'
-
 import { obs, twitch } from '@config'
-import { Rewards } from '@twitch'
 import { Event, Events } from '@events'
-import {
-  onRedeemEvent,
-  onOutroEvent,
-  onScreenshotEvent,
-  onBRBEvent,
-  onHostEvent,
-  onRewardCompleteEvent,
-  onCreateClipEvent,
-  toUpdateRewardEvent
-} from '@models'
 import { Logger } from '@logger'
-
+import {
+  onBRBEvent,
+  onCreateClipEvent,
+  onOutroEvent,
+  onRedeemEvent,
+  onRewardCompleteEvent,
+  onScreenshotEvent,
+  toUpdateRewardEvent,
+} from '@models'
+import { Rewards } from '@twitch'
+import { HelixCustomRewardRedemptionTargetStatus } from '@twurple/api/lib'
+import { promises as fs } from 'fs'
+import OBSWebSocket from 'obs-websocket-js'
+import { AudioDevice } from './audio'
+import { Scenes } from './scenes'
 
 export type SwitchScenesData = {
   'scene-name': string
@@ -34,11 +30,10 @@ export type SceneItemVisibilityChangedData = {
 }
 
 export class OBSController {
-
   private obs: OBSWebSocket
-  private currentScene: string
-  private stopStream: any
-  private _connected: boolean
+  private currentScene!: string
+  private stopStream!: NodeJS.Timeout
+  private _connected!: boolean
   private _user: string
 
   constructor() {
@@ -46,12 +41,21 @@ export class OBSController {
     this.connected = false
     this._user = twitch.channel
 
+    this.scene = ''
     this.obs.on('ConnectionClosed', () => this.disconnect())
     this.obs.on('StreamStarted', () => this.started())
-    this.obs.on('SwitchScenes', (data: SwitchScenesData) => this.onChangeScene(data['scene-name']))
-    this.obs.on('SceneItemVisibilityChanged', (data: SceneItemVisibilityChangedData) => this.onItemVisibilityChange(data))
+    this.obs.on('SwitchScenes', (data: SwitchScenesData) =>
+      this.onChangeScene(data['scene-name'])
+    )
+    this.obs.on(
+      'SceneItemVisibilityChanged',
+      (data: SceneItemVisibilityChangedData) =>
+        this.onItemVisibilityChange(data)
+    )
 
-    Event.addListener(Events.onChannelRedeem, (data: onRedeemEvent) => this.onRedeem(data))
+    Event.addListener(Events.onChannelRedeem, (data: onRedeemEvent) =>
+      this.onRedeem(data)
+    )
   }
 
   private get scene() {
@@ -66,8 +70,8 @@ export class OBSController {
     return this.stopStream
   }
 
-  private set timeout(x: any) {
-    this.stopStream = x
+  private set timeout(timeout: NodeJS.Timeout) {
+    this.stopStream = timeout
   }
 
   private get connected() {
@@ -78,11 +82,11 @@ export class OBSController {
     this._connected = connected
   }
 
-  public async connect() {
+  public async connect(): Promise<void> {
     if (!this.connected || this.connected === undefined) {
       await this.obs.connect({
         address: obs.address,
-        password: obs.password
+        password: obs.password,
       })
       this.connected = true
       console.log('OBSWEBSocket: connected ' + this.connected)
@@ -108,25 +112,36 @@ export class OBSController {
 
   private async onChangeScene(scene: string) {
     switch (scene) {
-      case Scenes.outro:
+      case Scenes.outro: {
         const status = await this.obs.send('GetStreamingStatus')
         this.emit(Events.onOutro, new onOutroEvent(status.streaming))
         this.setSourceVisibility(Scenes.outro, 'outro songs', true)
         break
-      case Scenes.brb:
+      }
+      case Scenes.brb: {
         this.mute()
         this.emit(Events.onBRB, new onBRBEvent('ad', twitch.channel))
         break
-      default:
+      }
+      default: {
         this.unmute()
         break
+      }
     }
   }
 
   private async onItemVisibilityChange(data: SceneItemVisibilityChangedData) {
     if (data['scene-name'] === Scenes.IRL && data['item-name'] === 'webcam') {
       const enable = data['item-visible']
-      this.emit(Events.toUpdateReward, new toUpdateRewardEvent(data, this._user, [Rewards.toBeContinued, Rewards.timeWarp], { isEnabled: enable }))
+      this.emit(
+        Events.toUpdateReward,
+        new toUpdateRewardEvent(
+          data,
+          this._user,
+          [Rewards.toBeContinued, Rewards.timeWarp],
+          { isEnabled: enable }
+        )
+      )
     }
   }
 
@@ -207,7 +222,7 @@ export class OBSController {
 
   private async stopCancel(data: onRedeemEvent) {
     await this.obs.send('SetCurrentScene', {
-      'scene-name': this.scene ? this.scene : Scenes.display
+      'scene-name': this.scene ? this.scene : Scenes.display,
     })
     this.setSourceVisibility(Scenes.outro, 'stop stream', false)
     clearTimeout(this.timeout)
@@ -232,7 +247,7 @@ export class OBSController {
 
   private async setCurrentScene(scene: string) {
     await this.obs.send('SetCurrentScene', {
-      'scene-name': scene
+      'scene-name': scene,
     })
   }
 
@@ -241,17 +256,21 @@ export class OBSController {
     await this.setFilterVisibility('IRL', 'Freeze', bool)
   }
 
-  private async setFilterVisibility(source: string, filter: string, enabled: boolean) {
+  private async setFilterVisibility(
+    source: string,
+    filter: string,
+    enabled: boolean
+  ) {
     await this.obs.send('SetSourceFilterVisibility', {
       sourceName: source,
       filterName: filter,
-      filterEnabled: enabled
+      filterEnabled: enabled,
     })
   }
 
   private async getMute(source: string) {
     const mute = await this.obs.send('GetMute', {
-      source: source
+      source: source,
     })
 
     return mute.muted
@@ -260,14 +279,16 @@ export class OBSController {
   private async setMute(source: string, bool: boolean) {
     await this.obs.send('SetMute', {
       source: source,
-      mute: bool
+      mute: bool,
     })
   }
 
   private async screenshot(screenshot: onRedeemEvent, source: string) {
     let complete: HelixCustomRewardRedemptionTargetStatus
     try {
-      const filePath = `./images/${ new Date().toISOString().replace(/:/gi, '-') }.png`
+      const filePath = `./images/${new Date()
+        .toISOString()
+        .replace(/:/gi, '-')}.png`
 
       const img = await this.obs.send('TakeSourceScreenshot', {
         sourceName: source,
@@ -279,21 +300,33 @@ export class OBSController {
       const buffer = Buffer.from(image, 'base64')
       await fs.writeFile(filePath, buffer, 'base64')
 
-      this.emit(Events.onScreenshot, new onScreenshotEvent(screenshot.user, filePath))
+      this.emit(
+        Events.onScreenshot,
+        new onScreenshotEvent(screenshot.user, filePath)
+      )
       complete = 'FULFILLED'
     } catch (err) {
-      new Logger(err, 'error')
+      new Logger(`${err}`, 'error')
       complete = 'CANCELED'
     }
 
-    this.rewardComplete(screenshot.channel, screenshot.rewardId, screenshot.id, complete)
+    this.rewardComplete(
+      screenshot.channel,
+      screenshot.rewardId,
+      screenshot.id,
+      complete
+    )
   }
 
-  private async setSourceVisibility(scene: string, source: string, visible: boolean) {
+  private async setSourceVisibility(
+    scene: string,
+    source: string,
+    visible: boolean
+  ) {
     await this.obs.send('SetSceneItemProperties', {
       'scene-name': scene,
       item: {
-        name: source
+        name: source,
       },
       visible: visible,
       bounds: {},
@@ -303,7 +336,15 @@ export class OBSController {
     })
   }
 
-  private rewardComplete(channelId: string, rewardId: string, redemptionId: string, complete: HelixCustomRewardRedemptionTargetStatus) {
-    this.emit(Events.onRewardComplete, new onRewardCompleteEvent(channelId, rewardId, redemptionId, complete))
+  private rewardComplete(
+    channelId: string,
+    rewardId: string,
+    redemptionId: string,
+    complete: HelixCustomRewardRedemptionTargetStatus
+  ) {
+    this.emit(
+      Events.onRewardComplete,
+      new onRewardCompleteEvent(channelId, rewardId, redemptionId, complete)
+    )
   }
 }
