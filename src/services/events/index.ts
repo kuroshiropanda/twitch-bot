@@ -1,2 +1,2 @@
-export * from './events'
 export * from './eventHandler'
+export * from './events'

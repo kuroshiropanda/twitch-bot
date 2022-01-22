@@ -2,11 +2,11 @@ import { file, reverseProxy, twitch } from '@config'
 import { Auth, Twitch } from '@twitch'
 import express from 'express'
 import { DateTime } from 'luxon'
-import { startBot, startUser } from 'startup'
+import { startBot, startUser } from '../startup'
 
-const twitchRoutes = express.Router()
+const twitchRouter = express.Router()
 
-twitchRoutes.get('/bot', (req, res) => {
+twitchRouter.get('/bot', (req, res) => {
   const url = `https://id.twitch.tv/oauth2/authorize?client_id=${
     twitch.clientId
   }&redirect_uri=${
@@ -15,7 +15,7 @@ twitchRoutes.get('/bot', (req, res) => {
   res.redirect(url)
 })
 
-twitchRoutes.get('/user', (req, res) => {
+twitchRouter.get('/user', (req, res) => {
   const url = `https://id.twitch.tv/oauth2/authorize?client_id=${
     twitch.clientId
   }&redirect_uri=${
@@ -24,7 +24,7 @@ twitchRoutes.get('/user', (req, res) => {
   res.redirect(url)
 })
 
-twitchRoutes.get('/callback', async (req, res) => {
+twitchRouter.get('/callback', async (req, res) => {
   const data = await Twitch.getToken(req.query.code)
   const timestamp = DateTime.now().toMillis()
   if (data.auth.scope.length <= 10) {
@@ -56,4 +56,4 @@ twitchRoutes.get('/callback', async (req, res) => {
   }
 })
 
-export { twitchRoutes }
+export const twitchRoutes = () => twitchRouter

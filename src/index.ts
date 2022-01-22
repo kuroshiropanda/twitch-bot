@@ -1,20 +1,16 @@
+import { reverseProxy } from '@config'
+import { DiscordHandler } from '@discord'
+import { ErrorHandler } from '@errorHandler'
+import { EventHandler } from '@events'
+import { app } from '@express'
 import dotenv from 'dotenv'
 import dotenvExpand from 'dotenv-expand'
+import http from 'http'
+import { startBot, startObs, startStreamlabs, startUser } from './startup'
 const env = dotenv.config()
 dotenvExpand.expand(env)
 
-import http from 'http'
-
-import { reverseProxy } from '@config'
-import { DiscordHandler } from '@discord'
-import { EventHandler } from '@events'
-import { ErrorHandler } from '@errorHandler'
-import { app } from '@express'
-
-import { startBot, startObs, startStreamlabs, startUser } from 'startup'
-
-(async () => {
-
+;(async () => {
   new ErrorHandler()
   const server = http.createServer(app)
   const discord = new DiscordHandler()

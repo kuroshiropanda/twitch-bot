@@ -1,2 +1,2 @@
-export * from './streamlabs'
 export * from './donate'
+export * from './streamlabs'

@@ -1,12 +1,11 @@
+import { Steam } from '@steam'
 import express from 'express'
 
-import { Steam } from '@steam'
+const steamRouter = express.Router()
 
-const steamRoute = express.Router()
-
-steamRoute.get(`/update`, async (req, res) => {
+steamRouter.get(`/update`, async (req, res) => {
   const steam = await Steam.updateJSON()
   res.send(steam)
 })
 
-export { steamRoute }
+export const steamRoutes = () => steamRouter

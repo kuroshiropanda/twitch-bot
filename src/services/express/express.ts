@@ -1,14 +1,13 @@
-import express from 'express'
-
 import { reverseProxy } from '@config'
-import { twitchRoutes, streamlabsRoute, steamRoute } from '@routes'
-import { startObs } from 'startup'
+// import { steamRoutes, streamlabsRoutes, twitchRoutes } from '@routes'
+import express from 'express'
+import { startObs } from '../../startup'
 
 const app = express()
 app.use(`${reverseProxy.path}/so`, express.static('resources/views/shoutout'))
-app.use(`${reverseProxy.path}/twitch`, twitchRoutes)
-app.use(`${reverseProxy.path}/streamlabs`, streamlabsRoute)
-app.use(`${reverseProxy.path}/steam`, steamRoute)
+// app.use(`${reverseProxy.path}/twitch`, twitchRoutes)
+// app.use(`${reverseProxy.path}/streamlabs`, streamlabsRoutes)
+// app.use(`${reverseProxy.path}/steam`, steamRoutes)
 
 app.get(`${reverseProxy.path}/obs/connect`, async (req, res) => {
   startObs()
