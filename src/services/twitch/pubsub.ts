@@ -1,7 +1,8 @@
-import {twitch} from '@config'
-import {Event, Events} from '@events'
-import {onBitsEvent, onRedeemEvent, onSubEvent} from '@models'
-import {AuthProvider} from '@twurple/auth/lib'
+import { twitch } from '@config'
+import { Event, Events } from '@events'
+import { onBitsEvent, onRedeemEvent, onSubEvent } from '@models'
+import { AuthProvider } from '@twurple/auth/lib'
+import { UserIdResolvable } from '@twurple/common/lib'
 import {
   PubSubBitsMessage,
   PubSubClient,
@@ -12,12 +13,12 @@ import {
 export class PubSub {
   private auth: AuthProvider
   private pubsub: PubSubClient
-  private channel: string
+  private channel: UserIdResolvable
 
-  constructor(auth: AuthProvider) {
+  constructor(auth: AuthProvider, channel: UserIdResolvable) {
     this.auth = auth
     this.pubsub = new PubSubClient()
-    this.channel = twitch.channel || 'kuroshiropanda'
+    this.channel = channel
   }
 
   public async init() {

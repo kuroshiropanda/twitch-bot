@@ -10,7 +10,7 @@ import { EventSubChannelHypeTrainProgressEvent } from '@twurple/eventsub/lib/Eve
 import { EventSubChannelRedemptionUpdateEvent } from '@twurple/eventsub/lib/Events/EventSubChannelRedemptionUpdateEvent'
 import { EventSubStreamOfflineEvent } from '@twurple/eventsub/lib/Events/EventSubStreamOfflineEvent'
 import { EventSubStreamOnlineEvent } from '@twurple/eventsub/lib/Events/EventSubStreamOnlineEvent'
-import { api } from './api'
+import { clientApi } from './api'
 
 export class EventSub {
   private eventsub: EventSubListener
@@ -25,7 +25,7 @@ export class EventSub {
     })
 
     this.eventsub = new EventSubListener({
-      apiClient: api,
+      apiClient: clientApi,
       adapter: this.adapter,
       secret: twitch.secret as string,
       logger: {
@@ -37,7 +37,7 @@ export class EventSub {
   }
 
   public async init() {
-    await api.eventSub.deleteBrokenSubscriptions()
+    await clientApi.eventSub.deleteBrokenSubscriptions()
     await this.eventsub.listen()
     await this.eventsub.subscribeToStreamOnlineEvents(
       this.id,

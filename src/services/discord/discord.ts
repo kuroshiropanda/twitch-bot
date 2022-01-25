@@ -7,7 +7,7 @@ import {
   toPostLiveEvent,
   toSayEvent,
 } from '@models'
-import { api } from '@twitch'
+import { clientApi } from '@twitch'
 import Discord, {
   Client,
   ColorResolvable,
@@ -75,7 +75,7 @@ export class DiscordHandler {
     const user = await stream.getUser()
     const game = await stream.getGame()
     const tags = await stream.getTags()
-    const followers = await api.users.getFollows({
+    const followers = await clientApi.users.getFollows({
       followedUser: user?.id,
     })
     const url = `https://twitch.tv/${user?.name}`
@@ -109,7 +109,7 @@ export class DiscordHandler {
   }
 
   private async onChat(chat: onChatEvent) {
-    const chatUser = await api.users.getUserByName(chat.user)
+    const chatUser = await clientApi.users.getUserByName(chat.user)
     const iconURL = chatUser?.profilePictureUrl
     const msg = new MessageEmbed()
       .setAuthor({

@@ -1,7 +1,8 @@
 import { Event, Events } from '@events'
 import { onShoutoutEvent, toSayEvent } from '@models'
-import { api } from '@twitch'
+import { Auth, clientApi } from '@twitch'
 import { HelixClip, UserIdResolvable } from '@twurple/api/lib'
+import { AccessToken, TokenInfo } from '@twurple/auth/lib'
 
 export const getClips = async (
   name: string,
@@ -19,9 +20,9 @@ export const getClips = async (
     startDate = date.start
     endDate = date.end
   }
-  const user = await api.users.getUserByName(name)
+  const user = await clientApi.users.getUserByName(name)
   const userId: UserIdResolvable = user?.id as string
-  const clips = await api.clips.getClipsForBroadcaster(userId, {
+  const clips = await clientApi.clips.getClipsForBroadcaster(userId, {
     startDate,
     endDate,
     limit,
@@ -60,3 +61,38 @@ export const shoutout = async (user: string) => {
 }
 
 export const dance = (multiplier = 1) => Math.random() < 0.25 * multiplier
+
+export const twitchAuth = async (
+  file: string,
+  auth: AccessToken,
+  user: TokenInfo
+) => {
+  const userAuth = new Auth(file)
+
+  userAuth.timestamp = auth.obtainmentTimestamp
+  if (user.userId) {
+    userAuth.id = user.userId
+  }
+
+  if (user.userName) {
+    userAuth.username = user.userName
+  }
+
+  if (auth.accessToken) {
+    userAuth.token = auth.accessToken
+  }
+
+  if (auth.refreshToken) {
+    userAuth.refreshToken = auth.refreshToken
+  }
+
+  if (auth.expiresIn) {
+    userAuth.expiry = auth.expiresIn
+  }
+
+  if (auth.scope) {
+    userAuth.scopes = auth.scope
+  }
+
+  await userAuth.save()
+}

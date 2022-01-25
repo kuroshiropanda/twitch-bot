@@ -1,7 +1,19 @@
+if (!process.env.TWITCH_CLIENT_ID) {
+  throw 'Missing Twitch Client ID'
+}
+
+if (!process.env.TWITCH_CLIENT_SECRET) {
+  throw 'Missing Twitch Client Secret'
+}
+
+if (!process.env.TWITCH_CALLBACK_URI) {
+  throw 'Missing Twitch Callback URI'
+}
+
 export const twitch = {
   channel: process.env.CHANNEL || 'kuroshiropanda',
-  clientId: process.env.TWITCH_CLIENT_ID as string,
-  clientSecret: process.env.TWITCH_CLIENT_SECRET as string,
+  clientId: process.env.TWITCH_CLIENT_ID,
+  clientSecret: process.env.TWITCH_CLIENT_SECRET,
   redirectURI: process.env.TWITCH_CALLBACK_URI,
   secret: process.env.EVENTSUB_SECRET,
   scopes: [
@@ -26,7 +38,7 @@ export const twitch = {
     'channel_commercial',
     'channel_editor',
     'user_read',
-    'user_blocks_read'
+    'user_blocks_read',
   ],
   botScopes: [
     'channel:moderate',
@@ -39,5 +51,5 @@ export const twitch = {
     'clips:edit',
     'channel_commercial',
     'channel_editor',
-  ]
+  ],
 }

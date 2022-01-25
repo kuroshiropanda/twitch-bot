@@ -1,5 +1,5 @@
-import {twitch} from '@config'
-import {Event, Events} from '@events'
+import { twitch } from '@config'
+import { Event, Events } from '@events'
 import {
   onClipEvent,
   onCreateClipEvent,
@@ -14,7 +14,7 @@ import {
   toSayEvent,
   toUpdateRewardEvent,
 } from '@models'
-import {Steam} from '@steam'
+import { Steam } from '@steam'
 import {
   ApiClient,
   HelixChannel,
@@ -25,14 +25,14 @@ import {
   HelixUser,
   UserIdResolvable,
 } from '@twurple/api'
-import {ClientCredentialsAuthProvider} from '@twurple/auth'
-import {Rewards} from './rewards'
+import { ClientCredentialsAuthProvider } from '@twurple/auth'
+import { Rewards } from './rewards'
 
 const authProvider = new ClientCredentialsAuthProvider(
-  twitch.clientId as string,
-  twitch.clientSecret as string
+  twitch.clientId,
+  twitch.clientSecret
 )
-export const api = new ApiClient({authProvider})
+export const clientApi = new ApiClient({ authProvider })
 
 export class ApiHandler {
   private api: ApiClient
@@ -156,7 +156,7 @@ export class ApiHandler {
       Rewards.tiktok
     )
     if (tiktok?.cost !== cost)
-      this.updateReward(data.broadcasterId, Rewards.tiktok, {cost})
+      this.updateReward(data.broadcasterId, Rewards.tiktok, { cost })
   }
 
   private async onRewardComplete(data: onRewardCompleteEvent) {

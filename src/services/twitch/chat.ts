@@ -24,7 +24,7 @@ import { ChatClient, ChatRaidInfo } from '@twurple/chat'
 import { PrivateMessage, UserNotice } from '@twurple/chat/lib'
 import { ChatClientOptions } from '@twurple/chat/lib/ChatClient'
 import { dance, shoutout } from '../../common'
-import { api } from './api'
+import { clientApi } from './api'
 import { Commands } from './commands'
 import { Rewards } from './rewards'
 
@@ -271,7 +271,7 @@ export class Chat {
   }
 
   private async emoteOnlyReward(data: onRedeemEvent) {
-    const channel = await api.users.getUserById(data.channel)
+    const channel = await clientApi.users.getUserById(data.channel)
     if (channel) {
       await this.chat.enableEmoteOnly(channel.name)
 

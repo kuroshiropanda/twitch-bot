@@ -1,8 +1,7 @@
+import { twitch } from '@config'
+import { AccessToken, exchangeCode, getTokenInfo } from '@twurple/auth'
 import axios from 'axios'
 import fs, { promises as fsp } from 'fs'
-
-import { twitch } from '@config'
-import { AccessToken } from '@twurple/auth/lib'
 
 export type TokenData = {
   auth: {
@@ -11,7 +10,7 @@ export type TokenData = {
     expires_in: number
     scope: string[]
     token_type: string
-  },
+  }
   user: {
     id: string
     login: string
@@ -31,33 +30,19 @@ export interface JSONData extends AccessToken {
 }
 
 export class Twitch {
-  static async getToken(code: any): Promise<TokenData> {
-    const token = await axios({
-      method: 'POST',
-      url: 'https://id.twitch.tv/oauth2/token',
-      params: {
-        client_id: twitch.clientId,
-        client_secret: twitch.clientSecret,
-        code: code,
-        grant_type: 'authorization_code',
-        redirect_uri: twitch.redirectURI
-      }
-    })
+  static async getToken(code: any) {
+    const token = await exchangeCode(
+      twitch.clientId,
+      twitch.clientSecret,
+      code,
+      twitch.redirectURI
+    )
+    const user = await getTokenInfo(token.accessToken, twitch.clientId)
 
-    const user = await axios({
-      method: 'GET',
-      url: 'https://api.twitch.tv/helix/users',
-      headers: {
-        'Client-ID': twitch.clientId,
-        'Authorization': `Bearer ${token.data.access_token}`
-      }
-    })
-
-    const data: TokenData = {
-      auth: token.data,
-      user: user.data.data[0]
+    return {
+      auth: token,
+      user,
     }
-    return data
   }
 
   static async getAppToken() {
@@ -68,8 +53,8 @@ export class Twitch {
         client_id: twitch.clientId,
         client_secret: twitch.clientSecret,
         grant_type: 'client_credentials',
-        scope: twitch.scopes.join(' ')
-      }
+        scope: twitch.scopes.join(' '),
+      },
     })
 
     return appToken.data.access_token
@@ -77,14 +62,20 @@ export class Twitch {
 
   public static async readJSON(file: string) {
     if (!fs.existsSync(file)) {
-      await fsp.writeFile(file, JSON.stringify({
-        token: '',
-        refreshToken: '',
-        expiry: null
-      }), 'utf-8')
+      await fsp.writeFile(
+        file,
+        JSON.stringify({
+          token: '',
+          refreshToken: '',
+          expiry: null,
+        }),
+        'utf-8'
+      )
     }
 
-    const data: JSONData = JSON.parse(await fsp.readFile(file, { encoding: 'utf-8' }))
+    const data: JSONData = JSON.parse(
+      await fsp.readFile(file, { encoding: 'utf-8' })
+    )
     return data
   }
 }
