@@ -4,7 +4,7 @@ import express from 'express'
 import { promises as fs } from 'fs'
 import { startStreamlabs } from '../startup'
 
-const streamlabsRouter = express.Router()
+export const streamlabsRouter = express.Router()
 
 streamlabsRouter.get(`/login`, (req, res) => {
   const url = `https://streamlabs.com/api/v1.0/authorize?response_type=code&client_id=${
@@ -26,5 +26,3 @@ streamlabsRouter.get(`/callback`, async (req, res) => {
   startStreamlabs()
   res.send(streamlabs)
 })
-
-export const streamlabsRoutes = () => streamlabsRouter

@@ -4,7 +4,7 @@ import express from 'express'
 import { twitchAuth } from '../common'
 import { startBot, startUser } from '../startup'
 
-const twitchRouter = express.Router()
+export const twitchRouter = express.Router()
 
 twitchRouter.get('/bot', (req, res) => {
   console.log('test')
@@ -37,6 +37,3 @@ twitchRouter.get('/callback', async (req, res) => {
     res.redirect(`${reverseProxy.path}/streamlabs/login`)
   }
 })
-
-export const twitchRoutes = () => twitchRouter
-// export { twitchRouter }

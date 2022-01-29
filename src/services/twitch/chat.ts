@@ -205,7 +205,8 @@ export class Chat {
   private async isBot(msg: PrivateMessage) {
     const u2san = msg.userInfo.userName === 'u2san_'
     const self = this.chat.currentNick === msg.userInfo.userName
-    return u2san || self
+    const bot = /bot/gi.test(msg.userInfo.userName)
+    return u2san || self || bot
   }
 
   private gonnaDance(multiplier: number) {

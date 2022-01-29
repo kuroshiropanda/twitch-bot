@@ -1,7 +1,7 @@
 import { Event, Events } from '@events'
 import { onShoutoutEvent, toSayEvent } from '@models'
 import { Auth, clientApi } from '@twitch'
-import { HelixClip, UserIdResolvable } from '@twurple/api/lib'
+import { HelixClip } from '@twurple/api/lib'
 import { AccessToken, TokenInfo } from '@twurple/auth/lib'
 
 export const getClips = async (
@@ -21,12 +21,14 @@ export const getClips = async (
     endDate = date.end
   }
   const user = await clientApi.users.getUserByName(name)
-  const userId: UserIdResolvable = user?.id as string
-  const clips = await clientApi.clips.getClipsForBroadcaster(userId, {
-    startDate,
-    endDate,
-    limit,
-  })
+  const clips = await clientApi.clips.getClipsForBroadcaster(
+    user?.id as string,
+    {
+      startDate,
+      endDate,
+      limit,
+    }
+  )
 
   if (!clips.data) return null
   return clips.data
