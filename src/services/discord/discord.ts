@@ -15,7 +15,6 @@ import Discord, {
   MessageEmbed,
   MessageOptions,
   MessagePayload,
-  TextChannel,
 } from 'discord.js'
 import { ActivityTypes } from 'discord.js/typings/enums'
 
@@ -159,7 +158,7 @@ export class DiscordHandler {
     channel: string,
     msg: string | MessageOptions | MessagePayload
   ) {
-    const text = this.client.channels.cache.get(channel) as TextChannel
-    text.send(msg)
+    const text = await this.client.channels.fetch(channel)
+    if (text && text.isText()) text.send(msg)
   }
 }
