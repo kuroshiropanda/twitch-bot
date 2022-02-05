@@ -48,15 +48,14 @@ export const thumbnailToUrl = (url: string, res: string) => {
 export const shoutout = async (user: string) => {
   const channel = user.replace('@', '')
   const clips = await getClips(channel)
+  console.log(clips)
 
-  if (clips) {
-    const clipsArray = clips.map(clip => {
-      return thumbnailToUrl(clip.thumbnailUrl, '360')
-    })
+  if (clips && clips.length > 0) {
+    const clipsArray = clips.map(clip =>
+      thumbnailToUrl(clip.thumbnailUrl, '360')
+    )
 
-    if (clipsArray.length > 0) {
-      Event.emit(Events.onShoutout, new onShoutoutEvent(user, clipsArray))
-    }
+    Event.emit(Events.onShoutout, new onShoutoutEvent(user, clipsArray))
   } else {
     Event.emit(Events.toSay, new toSayEvent(`${user} doesn't have clips`))
   }
