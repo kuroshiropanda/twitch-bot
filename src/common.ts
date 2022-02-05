@@ -48,7 +48,6 @@ export const thumbnailToUrl = (url: string, res: string) => {
 export const shoutout = async (user: string) => {
   const channel = user.replace('@', '')
   const clips = await getClips(channel)
-  console.log(clips)
 
   if (clips && clips.length > 0) {
     const clipsArray = clips.map(clip =>
