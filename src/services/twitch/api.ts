@@ -17,7 +17,6 @@ import {
 import { Steam } from '@steam'
 import {
   ApiClient,
-  HelixChannel,
   HelixClip,
   HelixCustomRewardRedemptionTargetStatus,
   HelixStream,
@@ -97,22 +96,29 @@ export class ApiHandler {
   }
 
   private async onGetGame(data: onGetGameEvent) {
-    const stream = (await this.api.channels.getChannelInfo(
-      data.channelId as string
-    )) as HelixChannel
-    const steam = await Steam.getGameUrl(stream?.gameName as string)
+    if (!data.channelId) return
+
+    const stream = await this.api.channels.getChannelInfo(data.channelId)
+    const steam = await Steam.getGameUrl(stream?.gameName)
+
+    if (!stream) return
 
     this.emit(
       Events.toSay,
       new toSayEvent(
-        `@${data.user}, ${data.channel} is currently playing ${stream.gameName}. ${steam}`
+        `${data.channel} is currently playing ${stream.gameName}. ${steam}`,
+        data.privateMsg
       )
     )
   }
 
   private async onClip(event: onCreateClipEvent) {
+    const channelId = event.channelId
+
+    if (!channelId) return
+
     const clip = await this.api.clips.createClip({
-      channelId: event.channel as string,
+      channelId,
       createAfterDelay: true,
     })
     const url = `https://clips.twitch.tv/${clip}`
@@ -121,12 +127,13 @@ export class ApiHandler {
     this.emit(
       Events.toSay,
       new toSayEvent(
-        `@${event.user}, here's the clip: ${url} if you want to edit it go here: ${editUrl}`
+        `here's the clip: ${url} if you want to edit it go here: ${editUrl}`,
+        event.privateMsg
       )
     )
     setTimeout(async () => {
-      const clipData = (await this.api.clips.getClipById(clip)) as HelixClip
-      this.emit(Events.onClip, new onClipEvent(event.user, clipData))
+      const clipData = await this.api.clips.getClipById(clip)
+      if (clipData) this.emit(Events.onClip, new onClipEvent(event.user, clipData))
     }, 5000)
   }
 

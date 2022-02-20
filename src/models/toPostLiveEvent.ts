@@ -27,7 +27,7 @@ export class toPostLiveEvent {
   }
 
   get thumbnail() {
-    return this._data.thumbnailUrl.replace('{width}x{height}', '1280x720')
+    return this._data.getThumbnailUrl(1280, 720)
   }
 
   get viewers() {

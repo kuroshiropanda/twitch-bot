@@ -115,15 +115,15 @@ export class Chat {
     } else {
       const [command, ...args] = trimmed.split(' ')
       switch (command) {
-        case Commands.dance:
-          this.chat.say(channel, "for every $5 I'll do a dance that you want")
-          break
-        case Commands.hypetrain:
-          this.chat.say(
-            channel,
-            "for each hype train level top contributors has the power to make me do dares/dance (I'm not obliged to do the dares meaning I might decline on doing it)"
-          )
-          break
+        // case Commands.dance:
+        //   this.chat.say(channel, "for every $5 I'll do a dance that you want")
+        //   break
+        // case Commands.hypetrain:
+        //   this.chat.say(
+        //     channel,
+        //     "for each hype train level top contributors has the power to make me do dares/dance (I'm not obliged to do the dares meaning I might decline on doing it)"
+        //   )
+        //   break
         case Commands.spoiler:
           this.chat
             .deleteMessage(channel, msg)
@@ -141,14 +141,14 @@ export class Chat {
           } else {
             this.emit(
               Events.onGetGame,
-              new onGetGameEvent(channel, msg.channelId, user)
+              new onGetGameEvent(channel, user, msg)
             )
           }
           break
         case Commands.createClip:
           this.emit(
             Events.onCreateClip,
-            new onCreateClipEvent(user, msg.channelId)
+            new onCreateClipEvent(msg)
           )
           break
         case Commands.shoutout:
@@ -217,7 +217,8 @@ export class Chat {
   }
 
   private toSay(event: toSayEvent) {
-    this.chat.say(this.channel, event.msg)
+    const replyTo = event.privateMsg
+    this.chat.say(this.channel, event.msg, { replyTo })
   }
 
   private onChannelRedeem(redeem: onRedeemEvent) {

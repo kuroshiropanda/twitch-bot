@@ -110,13 +110,14 @@ export class DiscordHandler {
   private async onChat(chat: onChatEvent) {
     const chatUser = await clientApi.users.getUserByName(chat.user)
     const iconURL = chatUser?.profilePictureUrl
+    const color = chat.userInfo.color ? chat.userInfo.color : 'DEFAULT'
     const msg = new MessageEmbed()
       .setAuthor({
         name: chat.userInfo.displayName,
         url: `https://twitch.tv/${chat.user}`,
         iconURL,
       })
-      .setColor(chat.userInfo.color as ColorResolvable)
+      .setColor(color as ColorResolvable)
       .setDescription(chat.message)
       .setTimestamp(new Date())
     this.sendMsg(discord.channels.chat as string, { embeds: [msg] })
