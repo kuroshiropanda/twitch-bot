@@ -17,11 +17,10 @@ import {
 import { Steam } from '@steam'
 import {
   ApiClient,
-  HelixClip,
   HelixCustomRewardRedemptionTargetStatus,
+  HelixPrivilegedUser,
   HelixStream,
   HelixUpdateCustomRewardData,
-  HelixUser,
   UserIdResolvable,
 } from '@twurple/api'
 import { ClientCredentialsAuthProvider } from '@twurple/auth'
@@ -35,12 +34,14 @@ export const clientApi = new ApiClient({ authProvider })
 
 export class ApiHandler {
   private api: ApiClient
+  private _user!: HelixPrivilegedUser
 
   constructor(api: ApiClient) {
     this.api = api
   }
 
   public async init() {
+    this._user = await this.api.users.getMe()
     Event.addListener(Events.onSetGame, (data: onSetGameEvent) =>
       this.onSetGame(data)
     )
@@ -140,9 +141,8 @@ export class ApiHandler {
   private async onPostClip(event: onPostClipEvent) {
     const clip = await this.api.clips.getClipById(event.clipId)
     if (!clip) return
-    const user = await this.api.users.getMe()
 
-    if (clip.broadcasterDisplayName === user.displayName) {
+    if (clip.broadcasterDisplayName === this._user.displayName) {
       this.emit(Events.onClip, new onClipEvent(event.user, clip))
     }
   }
@@ -198,9 +198,8 @@ export class ApiHandler {
   }
 
   private async toUpdateReward(data: toUpdateRewardEvent) {
-    const user = await this.api.users.getMe()
     for (const reward of data.rewardId) {
-      this.updateReward(user.id, reward, data.data)
+      this.updateReward(this._user.id, reward, data.data)
     }
   }
 
