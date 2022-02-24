@@ -1,9 +1,8 @@
-import { obs, twitch } from '@config'
+import { obs } from '@config'
 import { Event, Events } from '@events'
 import { Logger } from '@logger'
 import {
   onBRBEvent,
-  onCreateClipEvent,
   onOutroEvent,
   onRedeemEvent,
   onRewardCompleteEvent,
@@ -34,13 +33,10 @@ export class OBSController {
   private currentScene!: string
   private stopStream!: NodeJS.Timeout
   private _connected!: boolean
-  private _user: string
 
   constructor() {
     this.obs = new OBSWebSocket({ captureRejections: true })
     this.connected = false
-    this._user = twitch.channel
-
     this.scene = ''
     this.obs.on('ConnectionClosed', () => this.disconnect())
     this.obs.on('StreamStarted', () => this.started())
@@ -120,7 +116,7 @@ export class OBSController {
       }
       case Scenes.brb: {
         this.mute()
-        this.emit(Events.onBRB, new onBRBEvent('ad', twitch.channel))
+        this.emit(Events.onBRB, new onBRBEvent('ad'))
         break
       }
       default: {
@@ -137,7 +133,6 @@ export class OBSController {
         Events.toUpdateReward,
         new toUpdateRewardEvent(
           data,
-          this._user,
           [Rewards.toBeContinued, Rewards.timeWarp],
           { isEnabled: enable }
         )
@@ -188,7 +183,7 @@ export class OBSController {
     setTimeout(() => this.screenshot(data, 'webcam'), 11000)
     setTimeout(() => {
       this.setFilterVisibility('webcam', 'Time Warp Scan', false)
-      this.emit(Events.onCreateClip, new onCreateClipEvent(user, data.channel))
+      // this.emit(Events.toSay, new toSayEvent(user, data.channel))
     }, 15000)
   }
 

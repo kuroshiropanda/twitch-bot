@@ -2,7 +2,7 @@ import { file, reverseProxy, twitch } from '@config'
 import { Twitch } from '@twitch'
 import express from 'express'
 import { twitchAuth } from '../common'
-import { startBot, startUser } from '../startup'
+import { startUser } from '../startup'
 
 export const twitchRouter = express.Router()
 
@@ -29,7 +29,6 @@ twitchRouter.get('/callback', async (req, res) => {
   const data = await Twitch.getToken(req.query.code)
   if (data.auth.scope.length <= 10) {
     await twitchAuth(file.bot, data.auth, data.user)
-    startBot()
     res.send(data)
   } else {
     await twitchAuth(file.user, data.auth, data.user)

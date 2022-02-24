@@ -11,7 +11,6 @@ if (!process.env.TWITCH_CALLBACK_URI) {
 }
 
 export const twitch = {
-  channel: process.env.CHANNEL || 'kuroshiropanda',
   clientId: process.env.TWITCH_CLIENT_ID,
   clientSecret: process.env.TWITCH_CLIENT_SECRET,
   redirectURI: process.env.TWITCH_CALLBACK_URI,

@@ -5,7 +5,6 @@ export class toUpdateRewardEvent {
   private readonly _data: SceneItemVisibilityChangedData
   constructor(
     _data: SceneItemVisibilityChangedData,
-    public user: string,
     public rewardId: string[],
     public data: HelixUpdateCustomRewardData
   ) {

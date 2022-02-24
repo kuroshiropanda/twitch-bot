@@ -4,7 +4,7 @@ import { ErrorHandler } from '@errorHandler'
 import { EventHandler } from '@events'
 import { app } from '@express'
 import http from 'http'
-import { startBot, startObs, startStreamlabs, startUser } from './startup'
+import { startObs, startStreamlabs, startUser } from './startup'
 
 export const startApp = async () => {
   new ErrorHandler()
@@ -16,7 +16,6 @@ export const startApp = async () => {
   await io.init()
 
   startObs()
-  startBot()
   startUser()
   startStreamlabs()
 

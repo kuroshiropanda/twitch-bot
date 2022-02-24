@@ -138,9 +138,11 @@ export class ApiHandler {
   }
 
   private async onPostClip(event: onPostClipEvent) {
-    const clip = (await this.api.clips.getClipById(event.clipId)) as HelixClip
+    const clip = await this.api.clips.getClipById(event.clipId)
+    if (!clip) return
+    const user = await this.api.users.getMe()
 
-    if (clip.broadcasterDisplayName === twitch.channel) {
+    if (clip.broadcasterDisplayName === user.displayName) {
       this.emit(Events.onClip, new onClipEvent(event.user, clip))
     }
   }
@@ -196,7 +198,7 @@ export class ApiHandler {
   }
 
   private async toUpdateReward(data: toUpdateRewardEvent) {
-    const user = (await this.api.users.getUserByName(data.user)) as HelixUser
+    const user = await this.api.users.getMe()
     for (const reward of data.rewardId) {
       this.updateReward(user.id, reward, data.data)
     }

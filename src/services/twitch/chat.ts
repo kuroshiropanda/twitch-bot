@@ -33,8 +33,8 @@ export class Chat {
   private opts: ChatClientOptions
   private channel: string
 
-  constructor(auth: AuthProvider) {
-    this.channel = twitch.channel as string
+  constructor(auth: AuthProvider, channel: string) {
+    this.channel = channel
     this.opts = {
       authProvider: auth,
       webSocket: true,
