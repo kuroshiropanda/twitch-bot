@@ -30,12 +30,12 @@ export interface JSONData extends AccessToken {
 }
 
 export class Twitch {
-  static async getToken(code: any) {
+  static async getToken(code: string, redirectURI: string) {
     const token = await exchangeCode(
       twitch.clientId,
       twitch.clientSecret,
       code,
-      twitch.redirectURI
+      redirectURI
     )
     const user = await getTokenInfo(token.accessToken, twitch.clientId)
 

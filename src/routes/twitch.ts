@@ -2,7 +2,7 @@ import { file, reverseProxy, twitch } from '@config'
 import { Twitch } from '@twitch'
 import express from 'express'
 import { twitchAuth } from '../common'
-import { startUser } from '../startup'
+import { startBot } from '../startup'
 
 export const twitchRouter = express.Router()
 
@@ -11,7 +11,7 @@ twitchRouter.get('/bot', (req, res) => {
   const url = `https://id.twitch.tv/oauth2/authorize?client_id=${
     twitch.clientId
   }&redirect_uri=${
-    twitch.redirectURI
+    twitch.redirectURI.bot
   }&response_type=code&scope=${twitch.botScopes.join(' ')}&force_verify=true`
   res.redirect(url)
 })
@@ -20,19 +20,20 @@ twitchRouter.get('/user', (req, res) => {
   const url = `https://id.twitch.tv/oauth2/authorize?client_id=${
     twitch.clientId
   }&redirect_uri=${
-    twitch.redirectURI
+    twitch.redirectURI.user
   }&response_type=code&scope=${twitch.scopes.join(' ')}&force_verify=true`
   res.redirect(url)
 })
 
-twitchRouter.get('/callback', async (req, res) => {
-  const data = await Twitch.getToken(req.query.code)
-  if (data.auth.scope.length <= 10) {
-    await twitchAuth(file.bot, data.auth, data.user)
-    res.send(data)
-  } else {
-    await twitchAuth(file.user, data.auth, data.user)
-    startUser()
-    res.redirect(`${reverseProxy.path}/streamlabs/login`)
-  }
+twitchRouter.get('/bot/callback', async (req, res) => {
+  const data = await Twitch.getToken(req.query.code as string, twitch.redirectURI.bot)
+  await twitchAuth(file.bot, data.auth, data.user)
+  res.send(data)
+})
+
+twitchRouter.get('/user/callback', async (req, res) => {
+  const data = await Twitch.getToken(req.query.code as string, twitch.redirectURI.user)
+  await twitchAuth(file.user, data.auth, data.user)
+  await startBot()
+  res.redirect(`${reverseProxy.path}/streamlabs/login`)
 })

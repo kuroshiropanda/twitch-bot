@@ -10,7 +10,7 @@ export const startObs = async () => {
   await obs.connect()
 }
 
-export const startUser = async () => {
+export const startBot = async () => {
   const user = new Auth(file.user)
   const userInfo = await user.readFile()
   try {

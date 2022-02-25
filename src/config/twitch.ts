@@ -6,14 +6,21 @@ if (!process.env.TWITCH_CLIENT_SECRET) {
   throw 'Missing Twitch Client Secret'
 }
 
-if (!process.env.TWITCH_CALLBACK_URI) {
+if (!process.env.TWITCH_USER_REDIRECT) {
+  throw 'Missing Twitch Callback URI'
+}
+
+if (!process.env.TWITCH_BOT_REDIRECT) {
   throw 'Missing Twitch Callback URI'
 }
 
 export const twitch = {
   clientId: process.env.TWITCH_CLIENT_ID,
   clientSecret: process.env.TWITCH_CLIENT_SECRET,
-  redirectURI: process.env.TWITCH_CALLBACK_URI,
+  redirectURI: {
+    user: process.env.TWITCH_USER_REDIRECT,
+    bot: process.env.TWITCH_BOT_REDIRECT,
+  },
   secret: process.env.EVENTSUB_SECRET,
   scopes: [
     'bits:read',
