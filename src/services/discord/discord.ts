@@ -23,7 +23,7 @@ export class DiscordHandler {
 
   constructor() {
     this.client = new Client({
-      intents: Intents.FLAGS.GUILD_INTEGRATIONS,
+      intents: Object.values(Intents.FLAGS),
       presence: {
         status: 'dnd',
         activities: [
@@ -43,7 +43,7 @@ export class DiscordHandler {
     })
 
     this.client.login(discord.botToken)
-    this.client.on('message', (msg: Discord.Message) => this.onMessage(msg))
+    this.client.on('messageCreate', (msg) => this.onMessage(msg))
 
     Event.addListener(Events.toPostLive, (data: toPostLiveEvent) =>
       this.onLive(data)
