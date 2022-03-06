@@ -57,9 +57,7 @@ export class ApiHandler {
     Event.addListener(Events.onStreamLive, (data: onStreamLiveEvent) =>
       this.onStreamLive(data)
     )
-    Event.addListener(Events.onStreamOffline, (data: onStreamOfflineEvent) =>
-      this.onStreamOffline(data)
-    )
+    Event.addListener(Events.onStreamOffline, () => this.onStreamOffline())
     Event.addListener(Events.onRewardComplete, (data: onRewardCompleteEvent) =>
       this.onRewardComplete(data)
     )
@@ -134,7 +132,8 @@ export class ApiHandler {
     )
     setTimeout(async () => {
       const clipData = await this.api.clips.getClipById(clip)
-      if (clipData) this.emit(Events.onClip, new onClipEvent(event.user, clipData))
+      if (clipData)
+        this.emit(Events.onClip, new onClipEvent(event.user, clipData))
     }, 5000)
   }
 
@@ -148,24 +147,26 @@ export class ApiHandler {
   }
 
   private async onStreamLive(data: onStreamLiveEvent) {
-    const stream = (await this.api.streams.getStreamByUserId(
-      data.broadcasterId
-    )) as HelixStream
+    const stream = await this.api.streams.getStreamByUserId(data.broadcasterId)
     const subs = await this.api.subscriptions.getSubscriptions(
       data.broadcasterId
     )
 
-    this.emit(Events.toPostLive, new toPostLiveEvent(stream, subs))
+    if (stream) this.emit(Events.toPostLive, new toPostLiveEvent(stream, subs))
   }
 
-  private async onStreamOffline(data: onStreamOfflineEvent) {
+  private async onStreamOffline() {
     const cost = 50000
     const tiktok = await this.api.channelPoints.getCustomRewardById(
-      data.broadcasterId,
+      this._user.id,
       Rewards.tiktok
     )
+    await this.updateReward(this._user.id, Rewards.discount, {
+      isPaused: false,
+    })
+    await this.stopStreamReward(this._user.id, false)
     if (tiktok?.cost !== cost)
-      this.updateReward(data.broadcasterId, Rewards.tiktok, { cost })
+      this.updateReward(this._user.id, Rewards.tiktok, { cost })
   }
 
   private async onRewardComplete(data: onRewardCompleteEvent) {
@@ -178,22 +179,38 @@ export class ApiHandler {
   }
 
   private async onRedeem(data: onRedeemEvent) {
-    if (data.rewardId === Rewards.discount) {
-      const reward = await this.updateReward(data.channel, Rewards.tiktok, {
-        cost: 25000,
-      })
-      const complete: HelixCustomRewardRedemptionTargetStatus = reward
-        ? 'FULFILLED'
-        : 'CANCELED'
-      this.emit(
-        Events.onRewardComplete,
-        new onRewardCompleteEvent(
-          data.channel,
-          data.rewardId,
-          data.id,
-          complete
+    switch (data.rewardId) {
+      case Rewards.discount: {
+        await this.updateReward(data.channel, Rewards.discount, {
+          isPaused: true,
+        })
+        const reward = await this.updateReward(data.channel, Rewards.tiktok, {
+          cost: 25000,
+        })
+        const complete: HelixCustomRewardRedemptionTargetStatus = reward
+          ? 'FULFILLED'
+          : 'CANCELED'
+        this.emit(
+          Events.onRewardComplete,
+          new onRewardCompleteEvent(
+            data.channel,
+            data.rewardId,
+            data.id,
+            complete
+          )
         )
-      )
+        break
+      }
+      case Rewards.stopStream: {
+        await this.stopStreamReward(data.channel, true)
+        break
+      }
+      case Rewards.cancelStop: {
+        await this.stopStreamReward(data.channel, false)
+        break
+      }
+      default:
+        break
     }
   }
 
@@ -218,5 +235,14 @@ export class ApiHandler {
     } catch (e) {
       return false
     }
+  }
+
+  private async stopStreamReward(channel: UserIdResolvable, enabled: boolean) {
+    await this.updateReward(channel, Rewards.stopStream, {
+      isPaused: enabled,
+    })
+    await this.updateReward(channel, Rewards.cancelStop, {
+      isEnabled: enabled,
+    })
   }
 }

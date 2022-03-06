@@ -43,10 +43,6 @@ export class EventSub {
       this.id,
       (data: EventSubStreamOnlineEvent) => this.streamOnline(data)
     )
-    await this.eventsub.subscribeToStreamOfflineEvents(
-      this.id,
-      (data: EventSubStreamOfflineEvent) => this.streamOffline(data)
-    )
     await this.eventsub.subscribeToChannelFollowEvents(
       this.id,
       (data: EventSubChannelFollowEvent) => this.onFollow(data)
@@ -79,10 +75,6 @@ export class EventSub {
 
   private async streamOnline(data: EventSubStreamOnlineEvent) {
     this.emit(Events.onStreamLive, new onStreamLiveEvent(data))
-  }
-
-  private async streamOffline(data: EventSubStreamOfflineEvent) {
-    this.emit(Events.onStreamOffline, new onStreamOfflineEvent(data))
   }
 
   private async onFollow(data: EventSubChannelFollowEvent) {

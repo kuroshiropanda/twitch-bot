@@ -40,6 +40,7 @@ export class OBSController {
     this.scene = ''
     this.obs.on('ConnectionClosed', () => this.disconnect())
     this.obs.on('StreamStarted', () => this.started())
+    this.obs.on('StreamStopped', () => this.stopped())
     this.obs.on('SwitchScenes', (data: SwitchScenesData) =>
       this.onChangeScene(data['scene-name'])
     )
@@ -104,6 +105,10 @@ export class OBSController {
     this.setCurrentScene(Scenes.intro)
     this.setSourceVisibility(Scenes.intro, 'intro songs', true)
     this.setSourceVisibility(Scenes.intro, 'start websocket', false)
+  }
+
+  private async stopped() {
+    this.emit(Events.onStreamOffline)
   }
 
   private async onChangeScene(scene: string) {
